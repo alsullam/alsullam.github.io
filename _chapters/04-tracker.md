@@ -13,8 +13,6 @@ tags:
   - HTTP
   - Tracker
   - URL Encoding
-  - Protocols
-  - C
 ---
 
 ## What Is a Tracker?

@@ -17,10 +17,10 @@ permalink: /tags/
         {% comment %} Collect all tags {% endcomment %}
         {% assign all_tags = "" | split: "" %}
         {% for project in site.projects %}
-        {% for tag in project.tags %}{% assign all_tags = all_tags | push: tag %}{% endfor %}
+        {% for tag in project.tags limit:4 %}{% assign all_tags = all_tags | push: tag %}{% endfor %}
         {% endfor %}
         {% for chapter in site.chapters %}
-        {% for tag in chapter.tags %}{% assign all_tags = all_tags | push: tag %}{% endfor %}
+        {% for tag in chapter.tags limit:4 %}{% assign all_tags = all_tags | push: tag %}{% endfor %}
         {% endfor %}
         {% assign all_tags = all_tags | uniq | sort %}
 
@@ -45,7 +45,7 @@ permalink: /tags/
                     <a href="{{ project.url | relative_url }}" class="te-title">{{ project.title }}</a>
                     <p class="te-desc">{{ project.description | truncate: 140 }}</p>
                     <div class="te-tags">
-                        {% for tag in project.tags %}
+                        {% for tag in project.tags limit:4 %}
                         <span class="tag" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
                         {% endfor %}
                     </div>
@@ -71,7 +71,7 @@ permalink: /tags/
                     <p class="te-desc">{{ chapter.description | truncate: 130 }}</p>
                     {% endif %}
                     <div class="te-tags">
-                        {% for tag in chapter.tags %}
+                        {% for tag in chapter.tags limit:4 %}
                         <span class="tag" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
                         {% endfor %}
                     </div>

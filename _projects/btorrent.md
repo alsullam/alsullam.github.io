@@ -24,13 +24,8 @@ tags:
   - BitTorrent
   - Networking
   - P2P
-  - TCP Sockets
   - SHA-1
   - Bencoding
-  - Protocols
-  - RFC 3174
-  - BEP 0003
-  - Systems
   - C
 ---
 

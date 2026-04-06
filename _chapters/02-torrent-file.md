@@ -13,7 +13,6 @@ tags:
   - Torrent File
   - Info Hash
   - SHA-1
-  - C
 ---
 
 ## What Is a .torrent File?

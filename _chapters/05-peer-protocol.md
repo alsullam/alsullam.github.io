@@ -13,8 +13,6 @@ tags:
   - TCP Sockets
   - Protocols
   - BitTorrent
-  - Wire Protocol
-  - C
 ---
 
 ## Overview

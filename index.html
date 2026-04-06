@@ -72,7 +72,7 @@ title: "Systems Programming from Scratch"
                     <p class="pc-desc">{{ project.description | truncate: 160 }}</p>
                 </div>
                 <div class="pc-tags">
-                    {% for tag in project.tags limit:6 %}
+                    {% for tag in project.tags limit:4 %}
                     <span class="tag">{{ tag }}</span>
                     {% endfor %}
                 </div>
@@ -144,7 +144,7 @@ title: "Systems Programming from Scratch"
                     <a href="{{ project.url | relative_url }}" class="te-title">{{ project.title }}</a>
                     <p class="te-desc">{{ project.description | truncate: 120 }}</p>
                     <div class="te-tags">
-                        {% for tag in project.tags limit:5 %}
+                        {% for tag in project.tags limit:4 %}
                         <span class="tag" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
                         {% endfor %}
                     </div>
@@ -166,7 +166,7 @@ title: "Systems Programming from Scratch"
                     <p class="te-desc">{{ chapter.description | truncate: 120 }}</p>
                     {% endif %}
                     <div class="te-tags">
-                        {% for tag in chapter.tags limit:5 %}
+                        {% for tag in chapter.tags limit:4 %}
                         <span class="tag" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
                         {% endfor %}
                     </div>

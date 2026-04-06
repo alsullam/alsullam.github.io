@@ -13,7 +13,6 @@ tags:
   - Disk I/O
   - SHA-1
   - State Machine
-  - C
 ---
 
 ## The Big Picture
