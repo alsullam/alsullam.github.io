@@ -1,0 +1,258 @@
+---
+layout: default
+title: "Systems Programming from Scratch"
+---
+
+<!-- HERO -->
+<section class="hero">
+    <svg class="hero-stair" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="0" y="350" width="400" height="50" fill="currentColor"/>
+        <rect x="0" y="300" width="350" height="50" fill="currentColor"/>
+        <rect x="0" y="250" width="300" height="50" fill="currentColor"/>
+        <rect x="0" y="200" width="250" height="50" fill="currentColor"/>
+        <rect x="0" y="150" width="200" height="50" fill="currentColor"/>
+        <rect x="0" y="100" width="150" height="50" fill="currentColor"/>
+        <rect x="0" y="50"  width="100" height="50" fill="currentColor"/>
+        <rect x="0" y="0"   width="50"  height="50" fill="currentColor"/>
+    </svg>
+
+    <div class="container">
+        <div class="hero-inner">
+            <div class="eyebrow fu">Low-Level Systems Organization</div>
+            <h1 class="fu d1">
+                <span class="h-sub">السُّلَّم</span>
+                AL SULLAM
+            </h1>
+            <p class="h-desc fu d2">
+                We build systems software from absolute zero — no abstractions borrowed,
+                no magic accepted. Every project is a <strong>step up the stair</strong>,
+                built from scratch in low-level languages, fully documented.
+            </p>
+            <div class="hero-stats fu d3">
+                <div>
+                    <div class="stat-val">{{ site.projects | size }}</div>
+                    <div class="stat-lbl">Projects</div>
+                </div>
+                <div>
+                    <div class="stat-val">C</div>
+                    <div class="stat-lbl">Primary Lang</div>
+                </div>
+                <div>
+                    <div class="stat-val">0</div>
+                    <div class="stat-lbl">Borrowed Magic</div>
+                </div>
+                <div>
+                    <div class="stat-val">∞</div>
+                    <div class="stat-lbl">Steps Ahead</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- PROJECTS -->
+<section class="proj-section" id="projects">
+    <div class="container">
+        <div class="slabel">Projects</div>
+        <h2 style="margin-bottom:6px">Every Step, Built by Hand</h2>
+        <p style="max-width:500px;margin-bottom:0">
+            Each project attacks a fundamental layer of computing and rebuilds it from first principles.
+        </p>
+
+        <div class="proj-grid">
+            {% for project in site.projects %}
+            <article class="pcard">
+                <div class="pc-head">
+                    <div class="pc-num">PROJECT-{{ project.number | default: forloop.index | prepend: '00' | slice: -3, 3 }}</div>
+                    <div class="pc-title">{{ project.title }}</div>
+                    <div class="pc-lang">{{ project.lang }}</div>
+                </div>
+                <div class="pc-body">
+                    <p class="pc-desc">{{ project.description | truncate: 160 }}</p>
+                </div>
+                <div class="pc-tags">
+                    {% for tag in project.tags limit:6 %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                <div class="pc-foot">
+                    {% if project.status == 'complete' %}
+                    <span class="status s-ok"><span class="sdot"></span>Complete</span>
+                    {% elsif project.status == 'wip' %}
+                    <span class="status s-wip"><span class="sdot"></span>In Progress</span>
+                    {% else %}
+                    <span class="status s-plan"><span class="sdot"></span>Planned</span>
+                    {% endif %}
+
+                    {% if project.status != 'planned' %}
+                    <a href="{{ project.url | relative_url }}" class="clink">View docs →</a>
+                    {% else %}
+                    <span style="font-family:var(--font-mono);font-size:.62rem;color:var(--tx-3)">Coming soon</span>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+
+<!-- TAGS SECTION -->
+<section class="tags-section" id="tags">
+    <div class="container">
+        <div class="slabel">Browse by Tag</div>
+        <h2 style="margin-bottom:6px">Find by Topic</h2>
+        <p style="max-width:480px;margin-bottom:0">
+            Every project and chapter is tagged by concept. Click a tag to filter.
+        </p>
+
+        <!-- Collect all tags from projects + chapters -->
+        {% assign all_tags = "" | split: "" %}
+        {% for project in site.projects %}
+        {% for tag in project.tags %}
+        {% assign all_tags = all_tags | push: tag %}
+        {% endfor %}
+        {% endfor %}
+        {% for chapter in site.chapters %}
+        {% for tag in chapter.tags %}
+        {% assign all_tags = all_tags | push: tag %}
+        {% endfor %}
+        {% endfor %}
+        {% assign all_tags = all_tags | uniq | sort %}
+
+        <div class="tag-cloud-lg" id="tag-cloud">
+            <span class="tag active" data-tag="all" onclick="filterTag('all')">All</span>
+            {% for tag in all_tags %}
+            <span class="tag" data-tag="{{ tag | slugify }}" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
+            {% endfor %}
+        </div>
+
+        <!-- Tag result label -->
+        <div class="tag-result-label" id="tag-label">
+            Showing all projects &amp; chapters
+        </div>
+
+        <!-- Combined list of projects + chapters with their tags -->
+        <div class="tag-entries" id="tag-entries">
+
+            {% for project in site.projects %}
+            {% if project.status != 'planned' %}
+            <div class="tag-entry" data-tags="{% for t in project.tags %}{{ t | slugify }} {% endfor %}">
+                <span class="te-type">Project</span>
+                <div class="te-body">
+                    <a href="{{ project.url | relative_url }}" class="te-title">{{ project.title }}</a>
+                    <p class="te-desc">{{ project.description | truncate: 120 }}</p>
+                    <div class="te-tags">
+                        {% for tag in project.tags limit:5 %}
+                        <span class="tag" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+
+            {% assign sorted_chapters = site.chapters | sort: "title" %}
+            {% for chapter in sorted_chapters %}
+            <div class="tag-entry" data-tags="{% for t in chapter.tags %}{{ t | slugify }} {% endfor %}">
+                <span class="te-type">Chapter</span>
+                <div class="te-body">
+                    {% assign proj = site.projects | where: "slug", chapter.project | first %}
+                    <a href="{{ chapter.url | relative_url }}" class="te-title">
+                        {% if proj %}{{ proj.title }} / {% endif %}{{ chapter.title }}
+                    </a>
+                    {% if chapter.description %}
+                    <p class="te-desc">{{ chapter.description | truncate: 120 }}</p>
+                    {% endif %}
+                    <div class="te-tags">
+                        {% for tag in chapter.tags limit:5 %}
+                        <span class="tag" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+</section>
+
+<script>
+function filterTag(slug) {
+    var entries = document.querySelectorAll('.tag-entry');
+    var pills   = document.querySelectorAll('#tag-cloud .tag');
+    var label   = document.getElementById('tag-label');
+
+    pills.forEach(function(p) {
+        p.classList.toggle('active', p.getAttribute('data-tag') === slug);
+    });
+
+    var count = 0;
+    entries.forEach(function(e) {
+        var tags = e.getAttribute('data-tags') || '';
+        var show = slug === 'all' || tags.indexOf(slug) !== -1;
+        e.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+
+    if (slug === 'all') {
+        label.innerHTML = 'Showing all projects &amp; chapters';
+    } else {
+        var pill = document.querySelector('[data-tag="' + slug + '"]');
+        var name = pill ? pill.textContent : slug;
+        label.innerHTML = 'Tag: <span>' + name + '</span> &mdash; ' + count + ' result' + (count === 1 ? '' : 's');
+    }
+}
+</script>
+
+
+<!-- ABOUT -->
+<section class="about-sec" id="about">
+    <div class="container">
+        <div class="slabel">About</div>
+        <h2 style="margin-bottom:44px">Why We Build From Scratch</h2>
+        <div class="about-grid">
+            <div class="manifesto">
+                <p>
+                    <strong>AL Sullam</strong> — "The Stair" in Arabic — is a systems programming
+                    organization with a single guiding principle: <strong>understand everything below you.</strong>
+                </p>
+                <p>
+                    We live in an era of spectacular abstractions. Frameworks, runtimes, managed languages —
+                    each a gift that hides the machine underneath. We're grateful for them.
+                    We also refuse to be mystified by them.
+                </p>
+                <p>
+                    Every project starts at zero: no borrowed libraries for core logic, no generated parsers,
+                    no magic hash functions imported from somewhere else. We write the SHA-1.
+                    We write the TCP loop. We write the lexer character by character.
+                </p>
+                <p><strong>Not because it's faster. Because it teaches.</strong>
+                    درجة بدرجة — step by step.</p>
+            </div>
+            <ul class="phi-list">
+                <li class="phi-item">
+                    <span class="phi-n">01</span>
+                    <p class="phi-t"><strong>No Black Boxes</strong>Every dependency must be understood. If we use it, we could write it.</p>
+                </li>
+                <li class="phi-item">
+                    <span class="phi-n">02</span>
+                    <p class="phi-t"><strong>Document Everything</strong>Code without explanation is archaeology. Every project ships with deep-dive docs explaining the why, not just the how.</p>
+                </li>
+                <li class="phi-item">
+                    <span class="phi-n">03</span>
+                    <p class="phi-t"><strong>The Spec Is the Authority</strong>RFC, BEP, ISO — read the actual specification, implement faithfully, test against official vectors.</p>
+                </li>
+                <li class="phi-item">
+                    <span class="phi-n">04</span>
+                    <p class="phi-t"><strong>Low-Level First</strong>Start in C, where nothing is hidden. Understand memory, addresses, syscalls. Higher levels become obvious after.</p>
+                </li>
+                <li class="phi-item">
+                    <span class="phi-n">05</span>
+                    <p class="phi-t"><strong>Correctness Over Performance</strong>Make it right before making it fast. Working SHA-1 beats broken SIMD.</p>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>

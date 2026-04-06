@@ -1,0 +1,114 @@
+---
+layout: default
+title: "Browse by Tag"
+permalink: /tags/
+---
+
+<div style="padding-top:var(--nav-h)">
+    <div class="container" style="padding-top:60px;padding-bottom:96px">
+
+        <div class="slabel">Index</div>
+        <h2 style="margin-bottom:6px">Browse by Tag</h2>
+        <p style="max-width:480px;margin-bottom:40px">
+        Every project and chapter is tagged by concept, language, and protocol.
+        Use the tag cloud to filter.
+        </p>
+
+        {% comment %} Collect all tags {% endcomment %}
+        {% assign all_tags = "" | split: "" %}
+        {% for project in site.projects %}
+        {% for tag in project.tags %}{% assign all_tags = all_tags | push: tag %}{% endfor %}
+        {% endfor %}
+        {% for chapter in site.chapters %}
+        {% for tag in chapter.tags %}{% assign all_tags = all_tags | push: tag %}{% endfor %}
+        {% endfor %}
+        {% assign all_tags = all_tags | uniq | sort %}
+
+        <!-- Tag cloud -->
+        <div class="tag-cloud-lg" id="tag-cloud" style="margin-bottom:32px">
+            <span class="tag active" data-tag="all" onclick="filterTag('all')">All</span>
+            {% for tag in all_tags %}
+            <span class="tag" data-tag="{{ tag | slugify }}" id="tag-{{ tag | slugify }}" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
+            {% endfor %}
+        </div>
+
+        <div class="tag-result-label" id="tag-label">Showing all</div>
+
+        <!-- Projects header -->
+        <h4 style="margin:24px 0 12px">Projects</h4>
+        <div class="tag-entries" id="proj-entries">
+            {% for project in site.projects %}
+            {% if project.status != 'planned' %}
+            <div class="tag-entry" data-tags="{% for t in project.tags %}{{ t | slugify }} {% endfor %}">
+                <span class="te-type">Project</span>
+                <div class="te-body">
+                    <a href="{{ project.url | relative_url }}" class="te-title">{{ project.title }}</a>
+                    <p class="te-desc">{{ project.description | truncate: 140 }}</p>
+                    <div class="te-tags">
+                        {% for tag in project.tags %}
+                        <span class="tag" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Chapters header -->
+        <h4 style="margin:36px 0 12px">Chapters &amp; Docs</h4>
+        <div class="tag-entries" id="chap-entries">
+            {% assign sorted_chaps = site.chapters | sort: "project" %}
+            {% for chapter in sorted_chaps %}
+            <div class="tag-entry" data-tags="{% for t in chapter.tags %}{{ t | slugify }} {% endfor %}">
+                <span class="te-type">Chapter</span>
+                <div class="te-body">
+                    {% assign proj = site.projects | where: "slug", chapter.project | first %}
+                    <a href="{{ chapter.url | relative_url }}" class="te-title">
+                        {% if proj %}{{ proj.title }} / {% endif %}{{ chapter.title }}
+                    </a>
+                    {% if chapter.description %}
+                    <p class="te-desc">{{ chapter.description | truncate: 130 }}</p>
+                    {% endif %}
+                    <div class="te-tags">
+                        {% for tag in chapter.tags %}
+                        <span class="tag" onclick="filterTag('{{ tag | slugify }}')">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function filterTag(slug) {
+        ['proj-entries','chap-entries'].forEach(function(id) {
+            var entries = document.querySelectorAll('#' + id + ' .tag-entry');
+            entries.forEach(function(e) {
+                var tags = e.getAttribute('data-tags') || '';
+                e.style.display = (slug === 'all' || tags.indexOf(slug) !== -1) ? '' : 'none';
+            });
+        });
+
+        document.querySelectorAll('#tag-cloud .tag').forEach(function(p) {
+            p.classList.toggle('active', p.getAttribute('data-tag') === slug);
+        });
+
+        var label = document.getElementById('tag-label');
+        if (slug === 'all') {
+            label.innerHTML = 'Showing all';
+        } else {
+            var pill = document.querySelector('[data-tag="' + slug + '"]');
+            label.innerHTML = 'Filtered by: <span>' + (pill ? pill.textContent : slug) + '</span>';
+        }
+    }
+
+    // Auto-filter from URL hash (e.g. /tags/#bencoding)
+    if (window.location.hash) {
+        var h = window.location.hash.slice(1);
+        filterTag(h);
+    }
+</script>

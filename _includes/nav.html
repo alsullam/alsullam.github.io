@@ -1,0 +1,57 @@
+<nav class="site-nav">
+    <div class="nav-inner">
+
+        <a href="{{ '/' | relative_url }}" class="nav-logo">
+            <span class="logo-ar">السُّلَّم</span>
+            <span class="logo-en">AL Sullam</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="{{ '/' | relative_url }}" {% if page.url == '/' %}class="active"{% endif %}>Home</a></li>
+            <li><a href="{{ '/#projects' | relative_url }}">Projects</a></li>
+            <li><a href="{{ '/tags/' | relative_url }}" {% if page.url contains '/tags' %}class="active"{% endif %}>Tags</a></li>
+            <li><a href="{{ '/#about' | relative_url }}">About</a></li>
+            <li><a href="{{ site.github_url }}" target="_blank" rel="noopener">GitHub ↗</a></li>
+        </ul>
+
+        <div class="nav-right">
+            <!-- Theme toggle -->
+            <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+                <svg id="ico-sun" viewBox="0 0 24 24" style="display:none"><path d="M12 17a5 5 0 100-10 5 5 0 000 10zm0-13a1 1 0 011 1v1a1 1 0 11-2 0V5a1 1 0 011-1zm0 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm8-8a1 1 0 010 2h-1a1 1 0 010-2h1zM4 12a1 1 0 010 2H3a1 1 0 010-2h1zm12.66-5.66a1 1 0 011.41 1.41l-.7.7a1 1 0 11-1.42-1.41l.71-.7zM6.34 17.66a1 1 0 011.41 1.41l-.7.7a1 1 0 11-1.42-1.42l.71-.7zm12.02 1.42a1 1 0 01-1.41 1.41l-.71-.7a1 1 0 011.42-1.42l.7.71zM6.34 6.34a1 1 0 01-1.41 1.41l-.71-.7a1 1 0 011.42-1.41l.7.7z"/></svg>
+                <svg id="ico-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            </button>
+
+            <!-- Hamburger (mobile) -->
+            <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+
+    </div>
+</nav>
+
+<!-- Mobile menu overlay -->
+<div class="mob-ov" id="mob-ov" onclick="toggleMobileMenu()"></div>
+<div class="mob-menu" id="mob-menu">
+    <ul class="mob-nav">
+        <li><a href="{{ '/' | relative_url }}">Home</a></li>
+        <li><a href="{{ '/#projects' | relative_url }}">Projects</a></li>
+        <li><a href="{{ '/tags/' | relative_url }}">Tags</a></li>
+        <li><a href="{{ '/#about' | relative_url }}">About</a></li>
+        <li><a href="{{ site.github_url }}" target="_blank">GitHub ↗</a></li>
+    </ul>
+
+    {% if site.projects %}
+    <div class="mob-label">Projects</div>
+    <ul class="mob-nav">
+        {% for project in site.projects %}
+        <li>
+            <a href="{{ project.url | relative_url }}">
+                {{ project.number | default: '00' }} — {{ project.title }}
+                {% if project.status == 'planned' %}<span style="opacity:.4"> (planned)</span>{% endif %}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
