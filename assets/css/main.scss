@@ -786,6 +786,189 @@
     gap: 7px
   }
 
+  /* CTA button — large section call-to-action */
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 10px 20px;
+    border: 1px solid var(--accent);
+    border-radius: var(--r);
+    transition: background .2s, gap .2s, color .2s;
+    text-decoration: none
+  }
+
+  .cta-btn:hover {
+    background: var(--accent-s);
+    color: var(--accent-h);
+    /* gap: 14px */
+  }
+
+  .cta-btn::after {
+    content: '→';
+    font-size: .8rem
+  }
+
+  /* Section footer — row containing count + CTA, sits below a grid */
+  .section-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--bo-0)
+  }
+
+  .section-footer-note {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    color: var(--tx-3);
+    letter-spacing: .1em
+  }
+
+  .section-footer-note strong {
+    color: var(--tx-2);
+    font-weight: 500
+  }
+
+  /* Project group header (for grouped projects/status pages) */
+  .proj-group {
+    margin-bottom: 56px
+  }
+
+  .proj-group:last-child {
+    margin-bottom: 0
+  }
+
+  .proj-group-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--bo-0)
+  }
+
+  .proj-group-title {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--tx-1);
+    letter-spacing: .02em
+  }
+
+  .proj-group-count {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    color: var(--tx-3);
+    letter-spacing: .1em
+  }
+
+  /* Chapter teaser list — used on homepage tags section */
+  .chap-project-group {
+    margin-bottom: 36px
+  }
+
+  .chap-project-group:last-child {
+    margin-bottom: 0
+  }
+
+  .chap-project-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px
+  }
+
+  .chap-project-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--tx-1);
+    letter-spacing: .03em
+  }
+
+  .chap-project-lang {
+    font-family: var(--font-mono);
+    font-size: .58rem;
+    color: var(--accent);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 4px
+  }
+
+  .chap-project-lang::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: block
+  }
+
+  /* Compact chapter row — used in teaser and tags page */
+  .chap-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: var(--r);
+    transition: background .15s;
+    text-decoration: none;
+    border: 1px solid transparent
+  }
+
+  .chap-row:hover {
+    background: var(--bg-hover);
+    border-color: var(--bo-0)
+  }
+
+  .chap-row-num {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    color: var(--tx-3);
+    flex-shrink: 0;
+    min-width: 20px
+  }
+
+  .chap-row-title {
+    font-size: .9rem;
+    font-weight: 500;
+    color: var(--tx-1);
+    flex: 1;
+    min-width: 0
+  }
+
+  .chap-row-desc {
+    font-size: .78rem;
+    color: var(--tx-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+    display: none
+  }
+
+  .chap-row-tags {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0
+  }
+
+  @media(min-width:760px) {
+    .chap-row-desc {
+      display: block
+    }
+  }
+
   .tags-section {
     padding: 88px 0;
     border-top: 1px solid var(--bo-0)
@@ -795,7 +978,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin: 20px 0 40px
+    margin: 20px 0 28px
   }
 
   .tag-cloud-lg .tag {
@@ -807,10 +990,6 @@
     background: var(--accent-s);
     border-color: var(--accent);
     color: var(--accent)
-  }
-
-  .tag-results {
-    margin-top: 8px
   }
 
   .tag-result-label {
@@ -889,6 +1068,90 @@
     gap: 4px;
     margin-top: 6px;
     flex-wrap: wrap
+  }
+
+  /* "More chapters" link inside chapter teaser groups */
+  .chap-more-link {
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    color: var(--tx-3);
+    padding: 5px 12px;
+    display: inline-block;
+    text-decoration: none;
+    transition: color .15s;
+    letter-spacing: .06em
+  }
+
+  .chap-more-link:hover {
+    color: var(--accent)
+  }
+
+  /* Project index row — used on /tags/ page */
+  .proj-index-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    margin-bottom: 2px;
+    background: var(--bg-raised);
+    border: 1px solid var(--bo-1);
+    border-radius: var(--r);
+    gap: 16px;
+    transition: border-color .15s
+  }
+
+  .proj-index-row:hover {
+    border-color: var(--bo-2)
+  }
+
+  .pir-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0
+  }
+
+  .pir-num {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    color: var(--tx-3);
+    letter-spacing: .14em;
+    flex-shrink: 0
+  }
+
+  .pir-title {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: var(--tx-1);
+    letter-spacing: .01em;
+    margin-bottom: 4px
+  }
+
+  .pir-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap
+  }
+
+  .pir-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex-shrink: 0
+  }
+
+  /* Chapter index list indent */
+  .chap-index-list {
+    margin-bottom: 20px;
+    border-left: 1px solid var(--bo-0);
+    margin-left: 16px;
+    padding-left: 0;
+  }
+
+  .proj-group-block {
+    margin-bottom: 8px
   }
 
   /* About */
