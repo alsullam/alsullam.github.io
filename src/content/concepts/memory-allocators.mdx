@@ -1,0 +1,81 @@
+---
+title: Memory Allocators
+category: Memory
+tags: [malloc, arena, slab, buddy, heap, fragmentation]
+projects:
+  - { title: MemArena, slug: memarena }
+related:
+  - { title: Virtual Memory, slug: virtual-memory }
+  - { title: Cache Coherence, slug: cache-coherence }
+resources:
+  - { title: CSAPP — Chapter 9, slug: csapp }
+  - { title: What Every Programmer Should Know About Memory, slug: ulrich-memory }
+experiments:
+  - { title: Heap allocator fragmentation study, slug: allocator-fragmentation }
+---
+
+> `malloc` looks like magic. Under the hood it's a careful balancing act between speed, space efficiency, and fragmentation — and there's no perfect solution.
+
+## The Problem
+
+Programs need dynamic memory of varying sizes and lifetimes. The allocator's job is to
+hand out chunks of memory quickly, reclaim them when freed, and minimize wasted space —
+all without knowing the future allocation pattern.
+
+## Bump Allocator
+
+The simplest possible allocator: a pointer into a slab of memory. Allocation is a single
+pointer increment. No tracking, no freeing — just bump and go. Used in arenas and scratch buffers.
+
+```c
+void *bump_alloc(Arena *a, size_t size) {
+    void *ptr = a->ptr;
+    a->ptr += ALIGN(size, 16);
+    return ptr;
+}
+```
+
+**Pro:** O(1), cache-friendly, zero overhead per allocation.
+**Con:** Can't free individual allocations. Must reset the whole arena.
+
+## Free List Allocator
+
+Maintains a linked list of freed blocks. On alloc, walks the list for a fit (first-fit, best-fit).
+On free, adds the block back (and coalesces adjacent free blocks to prevent fragmentation).
+
+This is roughly how early `malloc` implementations worked. Still used in embedded systems.
+
+## Slab Allocator
+
+Used extensively in the Linux kernel. Pre-allocates caches of fixed-size objects.
+Allocation is O(1) — grab from the freelist. No fragmentation within a slab.
+Excellent for frequently allocated/freed objects of a known size (`task_struct`, `inode`, etc.).
+
+## Buddy Allocator
+
+Memory is divided into power-of-2 blocks. To allocate, round up to the nearest power of 2
+and split a larger block if needed. On free, merge with the "buddy" (the partner block at the same level)
+if it's also free. Linux uses this for physical page allocation.
+
+**Pro:** Coalescing is O(1) — you always know who your buddy is.
+**Con:** Internal fragmentation — a 33-byte allocation wastes 31 bytes in a 64-byte block.
+
+## glibc's `malloc` (ptmalloc2)
+
+glibc uses a combination: small allocations go to per-thread arenas with fixed-size bins;
+large allocations use `mmap`. It coalesces adjacent free chunks and has dozens of tuning
+parameters (`mallopt`).
+
+## Fragmentation
+
+Two types:
+- **Internal** — wasted space inside an allocated block (alignment padding, rounding)
+- **External** — enough total free memory exists, but no single contiguous block is large enough
+
+Coalescing addresses external fragmentation. Slab allocators eliminate it entirely for fixed sizes.
+
+## Open Questions
+
+- How does `jemalloc` reduce lock contention compared to ptmalloc2?
+- What does `mmap(MAP_POPULATE)` do for large arena pre-allocation?
+- How does the kernel's slab/slub/slob distinction work?

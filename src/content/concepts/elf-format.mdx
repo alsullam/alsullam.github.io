@@ -1,0 +1,51 @@
+---
+title: ELF Format
+category: Formats & ABIs
+tags: [elf, linker, sections, segments, symbols]
+projects:
+  - { title: ELF Parser, slug: elf-parser }
+related:
+  - { title: System Calls, slug: system-calls }
+  - { title: Virtual Memory, slug: virtual-memory }
+resources:
+  - { title: CSAPP — Chapter 7, slug: csapp }
+experiments:
+  - { title: ELF section stripping impact, slug: elf-stripping }
+---
+
+> ELF is the container format for executables, shared libraries, and object files on Linux. Understanding it is understanding how programs actually get from source to running.
+
+## The Two Views of ELF
+
+ELF provides two overlapping views of the same file:
+
+- **Sections** — for the linker. `.text`, `.data`, `.bss`, `.symtab`, `.rela.*`
+- **Segments** (program headers) — for the loader. `PT_LOAD`, `PT_DYNAMIC`, `PT_INTERP`
+
+At link time, sections are the unit of combination. At load time, segments are the unit of mapping.
+
+## Key Sections
+
+- `.text` — executable machine code
+- `.rodata` — read-only constants (string literals, etc.)
+- `.data` — initialized global/static variables
+- `.bss` — zero-initialized globals (no file data; zeroed at load time)
+- `.symtab` / `.strtab` — symbol table and string pool
+- `.rela.text` — relocation entries for the text section
+
+## Loading an ELF
+
+The kernel's ELF loader (or `ld.so` for dynamic binaries) walks `PT_LOAD` segments
+and `mmap`s each one at its requested virtual address. The `p_filesz` bytes are
+copied from the file; if `p_memsz > p_filesz`, the extra bytes (`.bss`) are zeroed.
+
+## Symbols and the Dynamic Linker
+
+A **symbol** is a name → address mapping. `nm` lists them; `readelf -s` shows full detail.
+For shared libraries, the PLT (Procedure Linkage Table) and GOT (Global Offset Table)
+implement lazy binding — symbol resolution deferred until first call.
+
+## Open Questions
+
+- How does DWARF debug info relate to ELF sections?
+- How does ASLR interact with position-independent executables (PIE)?

@@ -1,0 +1,40 @@
+---
+title: "Operating Systems: Three Easy Pieces"
+author: Arpaci-Dusseau
+category: Books
+tags: [os, scheduling, filesystem, concurrency, virtualization]
+rating: 5
+link: https://pages.cs.wisc.edu/~remzi/OSTEP/
+---
+
+## Why This Book
+
+OSTEP is free, well-written, and covers the three pillars of OS design with unusual clarity:
+virtualization (CPU + memory), concurrency, and persistence (storage). The conversational style
+makes dense material approachable without dumbing it down.
+
+## Structure
+
+The book is organized around its title — three "easy pieces":
+
+- **Virtualization** — processes, scheduling, address spaces, paging, swapping. The best introduction
+  to virtual memory I've found, with the right level of x86 specificity.
+- **Concurrency** — locks, condition variables, semaphores, deadlock. Covers both the theory and the gotchas.
+- **Persistence** — I/O devices, disks, RAID, filesystems, journaling, log-structured filesystems.
+  The filesystem section is exceptional.
+
+## What I Keep Coming Back To
+
+The scheduling chapters (CFS walkthrough), the address space chapters (segmentation → paging transition),
+and the filesystem chapters (ext-style inodes, journaling correctness) are the sections I re-read most.
+
+## Caveats
+
+- Lighter on Linux-specific internals than TLPI or CSAPP
+- The concurrency material is solid but doesn't go deep on memory ordering / atomics
+- Some homework problems assume simulators from the course website
+
+## Verdict
+
+Free, readable, and comprehensive. Start here if you're new to OS internals.
+Read it alongside CSAPP for the best coverage.

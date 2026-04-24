@@ -1,0 +1,42 @@
+---
+title: The Linux Programming Interface
+author: Michael Kerrisk
+category: Books
+tags: [linux, syscalls, posix, processes, signals, sockets]
+rating: 5
+---
+
+## Why This Book
+
+TLPI is the definitive reference for Linux/POSIX programming. Kerrisk is one of the main
+Linux man page maintainers — this book reflects that depth of knowledge. It's 1500 pages
+and covers essentially every syscall with precision and nuance.
+
+## What's Covered
+
+Every major POSIX and Linux API: files and I/O, processes (`fork`, `exec`, `wait`), signals,
+timers, threads (`pthreads`), process scheduling, memory (`mmap`, `mlock`), sockets, IPC
+(pipes, FIFOs, shared memory, message queues, semaphores), capabilities, and more.
+
+## How I Use It
+
+Less "read cover to cover" and more "the manual that actually explains the edge cases."
+When I run into surprising behavior with `select`, `fork`, or `fcntl`, I open TLPI
+and find the precise answer — with error conditions, portability notes, and Linux-specific behavior.
+
+## Standout Sections
+
+- **Chapter 24–26** — process creation, program execution, process termination. The best explanation
+  of `fork`/`exec`/`wait` semantics including zombie handling and `wait` options.
+- **Chapter 33** — threads and `pthreads`. Clear, precise, covers the tricky parts.
+- **Chapter 50** — virtual memory operations. `mmap`, `mprotect`, `mlock`, `madvise` — all explained properly.
+
+## Caveats
+
+- Dense. This is a reference, not a tutorial.
+- Focused on API — for kernel internals, you need "Linux Kernel Development" (Love) or source diving.
+- Expensive new; look for a used copy or a library copy.
+
+## Verdict
+
+Irreplaceable if you're doing serious Linux systems work. Treat it as a reference alongside man pages.

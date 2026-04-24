@@ -1,0 +1,74 @@
+---
+title: Page fault latency measurement
+outcome: success
+date: February 2025
+tags: [paging, benchmarking, linux, rdtsc]
+concepts:
+  - { title: Virtual Memory, slug: virtual-memory }
+projects:
+  - { title: MiniKernel, slug: minikernel }
+---
+
+## Hypothesis
+
+A minor page fault (demand paging, zero-initialized) should cost in the range of
+1–10 microseconds. I wanted to measure this empirically using `rdtsc` on an unloaded system.
+
+## Setup
+
+The experiment uses `mmap(MAP_ANONYMOUS | MAP_PRIVATE)` to allocate a large
+anonymous mapping without touching it, then reads `rdtsc`, accesses the first
+byte (triggering a page fault), and reads `rdtsc` again.
+
+```c
+#include <sys/mman.h>
+#include <stdint.h>
+#include <stdio.h>
+
+static inline uint64_t rdtsc() {
+    uint32_t lo, hi;
+    asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
+    return ((uint64_t)hi << 32) | lo;
+}
+
+int main() {
+    size_t size = 4096 * 1024;
+    char *p = mmap(NULL, size, PROT_READ|PROT_WRITE,
+                   MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+    uint64_t before = rdtsc();
+    volatile char x = p[0]; // trigger page fault
+    uint64_t after = rdtsc();
+    printf("cycles: %lu\n", after - before);
+    munmap(p, size);
+}
+```
+
+## Results
+
+Run 100 times on a Linux 6.6 kernel, Intel Core i7-11th gen, 3.2GHz base:
+
+| Metric | Cycles     | Time (~ns) |
+|--------|-----------|------------|
+| Min    | 1,842     | ~575 ns    |
+| Median | 3,241     | ~1,013 ns  |
+| P95    | 12,880    | ~4,025 ns  |
+| Max    | 31,440    | ~9,825 ns  |
+
+## Observations
+
+- **High variance** — OS scheduler jitter is significant at this scale
+- The kernel's page fault handler path is short but requires a kernel entry, page table walk, and physical page allocation
+- CPU frequency scaling affected results — pinning to a performance governor reduced variance considerably
+- NUMA: the test was pinned to node 0; cross-NUMA access would likely be 2–3× slower
+
+## What I Got Wrong
+
+Initially I forgot to use `madvise(MADV_NOHUGEPAGE)`, so THP (Transparent Huge Pages) was
+occasionally allocating 2MB pages instead of 4KB pages — inflating some measurements
+while reducing total fault count for subsequent runs in the same mapping.
+
+## Follow-up Questions
+
+- What's the cost when the page must be fetched from swap vs. zero-initialized?
+- How does `mlock()` affect the latency distribution?
+- Can `userfaultfd` be used to intercept faults with measurable overhead?

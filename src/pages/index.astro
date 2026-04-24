@@ -1,0 +1,117 @@
+---
+import Base from '../layouts/Base.astro';
+
+const recentProjects = [
+  { title: 'MiniKernel', desc: 'A bare-metal OS kernel written in C, bootable via GRUB', slug: 'minikernel', status: 'active' },
+  { title: 'MemArena', desc: 'Custom arena allocator with region-based memory management', slug: 'memarena', status: 'wip' },
+  { title: 'ELF Parser', desc: 'ELF binary format parser and loader from scratch', slug: 'elf-parser', status: 'active' },
+];
+
+const recentConcepts = [
+  { title: 'Virtual Memory', desc: 'Paging, TLBs, page faults and address translation', slug: 'virtual-memory' },
+  { title: 'CPU Scheduling', desc: 'Preemptive scheduling, context switches, and process states', slug: 'cpu-scheduling' },
+  { title: 'Cache Coherence', desc: 'MESI protocol, write policies, and cache hierarchy', slug: 'cache-coherence' },
+];
+---
+
+<Base title="Deep Dummying">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <p class="hero__eyebrow">Systems Lab</p>
+      <h1 class="hero__title">
+        Where low-level<br />
+        <em>curiosity becomes</em><br />
+        understanding.
+      </h1>
+      <p class="hero__desc">
+        A personal knowledge hub for exploring operating systems, memory management, 
+        CPU architecture, and everything that happens below the abstraction layer.
+      </p>
+
+      <!-- Entry Points -->
+      <div class="entry-grid">
+        <a href="/projects" class="entry-card">
+          <span class="entry-card__num">01</span>
+          <span class="entry-card__title">Projects</span>
+          <span class="entry-card__desc">Real implementations. Code that boots, allocates, and runs.</span>
+        </a>
+        <a href="/concepts" class="entry-card">
+          <span class="entry-card__num">02</span>
+          <span class="entry-card__title">Concepts</span>
+          <span class="entry-card__desc">Deep explorations of OS, memory, CPU, and systems fundamentals.</span>
+        </a>
+        <a href="/resources" class="entry-card">
+          <span class="entry-card__num">03</span>
+          <span class="entry-card__title">Resources</span>
+          <span class="entry-card__desc">Books, papers, tools, and references that shaped this knowledge.</span>
+        </a>
+        <a href="/experiments" class="entry-card">
+          <span class="entry-card__num">04</span>
+          <span class="entry-card__title">Experiments</span>
+          <span class="entry-card__desc">Small tests, failed attempts, and interesting findings.</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Projects -->
+  <section style="padding-bottom: 5rem;">
+    <div class="container">
+      <div class="labeled-divider"><span>Recent Projects</span></div>
+      <ul class="index-list">
+        {recentProjects.map((p, i) => (
+          <li class="index-item">
+            <span class="index-item__num">0{i+1}</span>
+            <div class="index-item__content">
+              <a href={`/projects/${p.slug}/0`} class="index-item__title">{p.title}</a>
+              <div class="index-item__meta">
+                <span class="tag tag--project">project</span>
+                <span class={`status status--${p.status}`}>
+                  <span class="status__dot"></span>
+                  {p.status}
+                </span>
+              </div>
+              <p class="index-item__desc">{p.desc}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div style="margin-top: 1.5rem;">
+        <a href="/projects" class="tag" style="font-size: 0.75rem; padding: 0.4em 0.9em;">View all projects →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Concepts -->
+  <section style="padding-bottom: 5rem;">
+    <div class="container">
+      <div class="labeled-divider"><span>Recent Concepts</span></div>
+      <div class="grid-3">
+        {recentConcepts.map(c => (
+          <a href={`/concepts/${c.slug}`} class="card" style="text-decoration: none;">
+            <span class="tag tag--concept" style="margin-bottom: 1rem; display: inline-block;">concept</span>
+            <h3 style="font-family: var(--font-display); font-weight: 400; margin-bottom: 0.5rem;">{c.title}</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">{c.desc}</p>
+          </a>
+        ))}
+      </div>
+      <div style="margin-top: 1.5rem;">
+        <a href="/concepts" class="tag" style="font-size: 0.75rem; padding: 0.4em 0.9em;">Explore all concepts →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lab Note -->
+  <section style="padding-bottom: 6rem;">
+    <div class="container--narrow">
+      <div style="background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; border-left: 2px solid var(--border-hover);">
+        <p class="section-label" style="margin-bottom: 1rem;">Lab Note</p>
+        <p style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 400; color: var(--text); line-height: 1.7; font-style: italic;">
+          "The purpose of abstraction is not to be vague, but to create a new semantic level in which one can be absolutely precise."
+        </p>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 1rem; font-family: var(--font-mono);">— Edsger W. Dijkstra</p>
+      </div>
+    </div>
+  </section>
+</Base>

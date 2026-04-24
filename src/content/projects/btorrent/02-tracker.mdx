@@ -1,0 +1,95 @@
+---
+title: "Tracker Communication"
+chapter: 2
+---
+
+## What Is a Tracker?
+
+A tracker is an HTTP (or UDP) server that knows which peers are currently downloading
+a given torrent. You tell it you exist, it gives you a list of other peers.
+That's the entire job.
+
+## The HTTP Announce Request
+
+Send a `GET` with these query parameters:
+
+| Parameter    | Value                                      |
+|-------------|---------------------------------------------|
+| `info_hash`  | URL-encoded 20-byte SHA-1 of `info` dict   |
+| `peer_id`    | Your 20-byte random client ID              |
+| `port`       | Port you're listening on (e.g. 6881)       |
+| `uploaded`   | Bytes uploaded so far                      |
+| `downloaded` | Bytes downloaded so far                    |
+| `left`       | Bytes remaining                            |
+| `compact`    | `1` (request compact peer list)            |
+| `event`      | `started` / `completed` / `stopped`        |
+
+```c
+char url[2048];
+snprintf(url, sizeof(url),
+    "%s?info_hash=%s&peer_id=%s&port=6881"
+    "&uploaded=0&downloaded=0&left=%zu&compact=1&event=started",
+    tracker_url,
+    url_encode(info_hash, 20),   // percent-encode all 20 bytes
+    peer_id_str,
+    total_size
+);
+```
+
+## URL-Encoding the Info Hash
+
+The info_hash is raw binary, but URL query strings need percent-encoding.
+Every byte becomes `%XX` where XX is the hex value — even printable ASCII chars.
+
+```c
+char *url_encode(const uint8_t *data, size_t len) {
+    char *out = malloc(len * 3 + 1);
+    char *p = out;
+    for (size_t i = 0; i < len; i++) {
+        p += sprintf(p, "%%%02X", data[i]);
+    }
+    *p = '\0';
+    return out;
+}
+```
+
+## Parsing the Tracker Response
+
+The tracker responds with a bencoded dict. Success looks like:
+
+```
+d
+  8:interval  i1800e        ← re-announce every 30 minutes
+  5:peers     <binary>      ← compact format: 6 bytes per peer
+e
+```
+
+In **compact mode** (`compact=1`), peers is a binary string where every 6 bytes
+is one peer: 4 bytes IP (big-endian) + 2 bytes port (big-endian).
+
+```c
+BencNode *resp  = benc_parse(response_body, response_len, &consumed);
+BencNode *peers_raw = dict_get(resp, "peers");
+
+size_t peer_count = peers_raw->string.len / 6;
+for (size_t i = 0; i < peer_count; i++) {
+    uint8_t *p = (uint8_t *)peers_raw->string.data + i * 6;
+    struct in_addr ip = { .s_addr = *(uint32_t *)p };
+    uint16_t port = ntohs(*(uint16_t *)(p + 4));
+    printf("Peer: %s:%u\n", inet_ntoa(ip), port);
+}
+```
+
+## What I Got Wrong First
+
+My initial URL encoding only encoded non-ASCII bytes — treating printable bytes like
+`.` and `-` as safe. The tracker rejected the request. The BitTorrent spec requires
+encoding **all** 20 bytes of the info_hash unconditionally, regardless of their value.
+
+Also: the `interval` field is the **minimum** time between announces, not a suggestion.
+Some trackers ban clients that announce too frequently.
+
+## Next: Connecting to Peers
+
+With a list of peer IP:port pairs, we can start opening TCP connections
+and doing the BitTorrent handshake. That's the next chapter.

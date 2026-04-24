@@ -1,0 +1,96 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const projects = [
+  {
+    title: 'BTorrent',
+    slug: 'btorrent',
+    desc: 'A BitTorrent client built from scratch in C. Implements peer discovery, piece selection, and parallel downloading over raw TCP.',
+    status: 'wip',
+    tags: ['networking', 'bittorrent', 'c', 'tcp'],
+    concepts: ['io-models', 'system-calls'],
+    date: '2025-04',
+  },
+  {
+    title: 'MiniKernel',
+    slug: 'minikernel',
+    desc: 'A bare-metal OS kernel written in C with basic process scheduling, memory paging, and interrupt handling. Bootable via GRUB on x86.',
+    status: 'active',
+    tags: ['os', 'c', 'x86', 'kernel', 'interrupts'],
+    concepts: ['virtual-memory', 'cpu-scheduling'],
+    date: '2024-11',
+  },
+  {
+    title: 'MemArena',
+    slug: 'memarena',
+    desc: 'Custom arena allocator implementing region-based memory management, with bump allocation and linear free lists.',
+    status: 'wip',
+    tags: ['memory', 'c', 'allocator'],
+    concepts: ['memory-allocators', 'virtual-memory'],
+    date: '2025-01',
+  },
+  {
+    title: 'ELF Parser',
+    slug: 'elf-parser',
+    desc: 'A parser and loader for ELF binaries. Reads section headers, program headers, and resolves symbol tables.',
+    status: 'active',
+    tags: ['elf', 'linker', 'c', 'binary'],
+    concepts: ['elf-format'],
+    date: '2025-02',
+  },
+  {
+    title: 'SyscallTrace',
+    slug: 'syscalltrace',
+    desc: 'A ptrace-based syscall tracer similar to strace. Intercepts and logs all system calls made by a target process.',
+    status: 'paused',
+    tags: ['linux', 'ptrace', 'syscalls', 'c'],
+    concepts: ['system-calls'],
+    date: '2024-09',
+  },
+  {
+    title: 'TinyShell',
+    slug: 'tinyshell',
+    desc: 'A minimal POSIX shell with job control, pipes, redirections, and background process management.',
+    status: 'active',
+    tags: ['shell', 'posix', 'c', 'processes'],
+    concepts: ['process-management'],
+    date: '2025-03',
+  },
+];
+---
+
+<Base title="Projects">
+  <div class="container">
+    <div class="page-header">
+      <p class="section-label">01 — Projects</p>
+      <h1>Projects</h1>
+      <p style="max-width: 50ch; margin-top: 0.75rem; color: var(--text-muted);">
+        Real implementations. Code that boots, allocates, executes — built to understand 
+        systems from the inside out.
+      </p>
+    </div>
+
+    <ul class="index-list">
+      {projects.map((p, i) => (
+        <li class="index-item">
+          <span class="index-item__num">{String(i+1).padStart(2, '0')}</span>
+          <div class="index-item__content">
+            <a href={`/projects/${p.slug}/0`} class="index-item__title">{p.title}</a>
+            <div class="index-item__meta">
+              <span class={`status status--${p.status}`}>
+                <span class="status__dot"></span>
+                {p.status}
+              </span>
+              <span class="dot"></span>
+              <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted);">{p.date}</span>
+              {p.tags.slice(0, 3).map(tag => (
+                <span class="tag">{tag}</span>
+              ))}
+            </div>
+            <p class="index-item__desc">{p.desc}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>

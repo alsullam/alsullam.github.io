@@ -1,0 +1,84 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const categories = [
+  {
+    name: 'Memory',
+    concepts: [
+      { title: 'Virtual Memory', slug: 'virtual-memory', desc: 'Paging, TLBs, page faults, address translation' },
+      { title: 'Memory Allocators', slug: 'memory-allocators', desc: 'Heap, arena, slab, buddy allocators' },
+      { title: 'Cache Coherence', slug: 'cache-coherence', desc: 'MESI, write policies, cache hierarchy' },
+    ]
+  },
+  {
+    name: 'CPU & Execution',
+    concepts: [
+      { title: 'CPU Scheduling', slug: 'cpu-scheduling', desc: 'Preemptive scheduling, context switches, process states' },
+      { title: 'Interrupts & IDT', slug: 'interrupts', desc: 'Hardware interrupts, IRQs, IDT structure' },
+      { title: 'Privilege Levels', slug: 'privilege-levels', desc: 'Ring 0-3, protection, syscall mechanism' },
+    ]
+  },
+  {
+    name: 'Formats & ABIs',
+    concepts: [
+      { title: 'ELF Format', slug: 'elf-format', desc: 'ELF sections, program headers, symbol tables' },
+      { title: 'System Calls', slug: 'system-calls', desc: 'Syscall interface, Linux ABI, trapping' },
+      { title: 'Process Management', slug: 'process-management', desc: 'fork, exec, wait, process groups' },
+    ]
+  },
+  {
+    name: 'Storage & I/O',
+    concepts: [
+      { title: 'File Systems', slug: 'file-systems', desc: 'inodes, ext4 internals, journaling' },
+      { title: 'I/O Models', slug: 'io-models', desc: 'blocking, non-blocking, io_uring, epoll' },
+    ]
+  },
+];
+---
+
+<Base title="Concepts">
+  <div class="container">
+    <div class="page-header">
+      <p class="section-label">02 — Concepts</p>
+      <h1>Concepts</h1>
+      <p style="max-width: 52ch; margin-top: 0.75rem; color: var(--text-muted);">
+        Deep explorations of operating systems, memory, CPU architecture, 
+        and everything that makes software work below the abstraction layer.
+      </p>
+    </div>
+
+    <!-- Pinned: Setup & Environment -->
+    <div style="margin-bottom: 3rem;">
+      <div class="labeled-divider" style="margin-top: 0;">
+        <span>📌 Pinned</span>
+      </div>
+      <a href="/concepts/setup" class="card pinned-card" style="text-decoration: none; display: block; max-width: 480px; border-color: rgba(212,212,216,0.12);">
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+          <span class="tag" style="color: var(--accent); border-color: rgba(212,212,216,0.2); background: rgba(212,212,216,0.06);">pinned</span>
+          <span class="tag">meta</span>
+        </div>
+        <h3 style="font-family: var(--font-display); font-weight: 500; margin-bottom: 0.4rem; color: var(--text);">My Setup & Environment</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.6;">
+          The machine, editor, terminal, and workflow behind everything in this lab.
+        </p>
+      </a>
+    </div>
+
+    {categories.map(cat => (
+      <div style="margin-bottom: 3.5rem;">
+        <div class="labeled-divider" style="margin-top: 0;">
+          <span>{cat.name}</span>
+        </div>
+        <div class="grid-3">
+          {cat.concepts.map(c => (
+            <a href={`/concepts/${c.slug}`} class="card" style="text-decoration: none; display: block;">
+              <span class="tag tag--concept" style="margin-bottom: 1rem; display: inline-block;">concept</span>
+              <h3 style="font-family: var(--font-display); font-weight: 400; margin-bottom: 0.5rem; color: var(--text);">{c.title}</h3>
+              <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.6;">{c.desc}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</Base>

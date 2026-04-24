@@ -1,0 +1,79 @@
+---
+title: Trying to build a lockless ring buffer
+outcome: failure
+date: January 2025
+tags: [concurrency, memory-ordering, atomics, spsc]
+concepts: []
+---
+
+## Goal
+
+Build a correct, lockless Single-Producer Single-Consumer (SPSC) ring buffer in C
+using C11 atomics. No locks. No kernel involvement. Just atomic operations and memory ordering.
+
+## Why It Should Work
+
+SPSC is the simplest concurrent queue case — exactly one writer, one reader.
+You only need two indices: `head` (writer advances it) and `tail` (reader advances it).
+The producer reads `tail` to check space; the consumer reads `head` to check data.
+Neither modifies the other's index. Sounds like it should be lock-free by nature.
+
+## Attempt 1: Naive Version
+
+```c
+typedef struct {
+    char    buf[SIZE];
+    int     head;
+    int     tail;
+} RingBuf;
+
+// Producer
+void push(RingBuf *rb, char val) {
+    while ((rb->head + 1) % SIZE == rb->tail); // spin
+    rb->buf[rb->head] = val;
+    rb->head = (rb->head + 1) % SIZE;
+}
+```
+
+**Result:** Data corruption under load. Classic data race — no memory ordering guarantees.
+The compiler and CPU can reorder the store to `buf[head]` with the store to `head`.
+
+## Attempt 2: Adding `__atomic` Builtins
+
+Switched to `__atomic_load` / `__atomic_store` with `__ATOMIC_ACQUIRE` / `__ATOMIC_RELEASE`.
+
+```c
+void push(RingBuf *rb, char val) {
+    int head = __atomic_load_n(&rb->head, __ATOMIC_RELAXED);
+    int tail = __atomic_load_n(&rb->tail, __ATOMIC_ACQUIRE);
+    while ((head + 1) % SIZE == tail) {
+        tail = __atomic_load_n(&rb->tail, __ATOMIC_ACQUIRE);
+    }
+    rb->buf[head] = val;
+    __atomic_store_n(&rb->head, (head + 1) % SIZE, __ATOMIC_RELEASE);
+}
+```
+
+**Result:** Still wrong. I had the acquire/release on the wrong operations.
+The write to `buf[head]` must happen-before the store to `head` — that's what RELEASE on the index store gives you.
+But the consumer's read of `buf[tail]` must happen-after the acquire load of `head`.
+I had them flipped in my reader.
+
+## Why I Stopped
+
+Getting the memory ordering exactly right requires reasoning carefully about the
+happens-before relation for every access. I found three different implementations
+online and they all had subtly different (and plausibly wrong) orderings.
+Without a formal verification tool (like CDSChecker or Relacy), I can't be confident.
+
+## What I Learned
+
+- `RELAXED` loads/stores compile to plain loads/stores but **prevent** compiler reordering — hardware reordering still applies
+- `ACQUIRE` establishes a happens-before with a prior `RELEASE` on the same variable
+- On x86, all stores have implicit `RELEASE` semantics and loads have `ACQUIRE` — the issue is the compiler, not the hardware
+- TSan (ThreadSanitizer) is invaluable but has false negatives for subtle ordering bugs
+
+## What I'd Do Differently
+
+Use a proven implementation (like the one in Linux's `kfifo` or Folly's `ProducerConsumerQueue`)
+and study the memory ordering comments carefully before writing my own.

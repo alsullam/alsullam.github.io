@@ -1,0 +1,158 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('concepts');
+  return entries.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+const c = entry.data;
+
+type Link = { title: string; slug: string };
+type Heading = { depth: number; slug: string; text: string };
+---
+
+<Base title={c.title}>
+  <div class="toc-layout">
+
+    <!-- Main content -->
+    <div class="toc-content">
+      <div class="breadcrumb">
+        <a href="/">home</a><span>/</span>
+        <a href="/concepts">concepts</a><span>/</span>
+        <span style="color: var(--purple);">{entry.id}</span>
+      </div>
+
+      <div class="page-header">
+        <div class="page-header__meta">
+          <span class="tag tag--concept">concept</span>
+          <span class="dot"></span>
+          <span class="mono-dim">{c.category}</span>
+        </div>
+        <h1>{c.title}</h1>
+        <div class="page-header__tags">
+          {c.tags.map((tag: string) => <span class="tag">{tag}</span>)}
+        </div>
+      </div>
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      {c.projects && c.projects.length > 0 && (
+        <div class="related-section">
+          <p class="section-label">Projects Using This Concept</p>
+          <div class="related-grid">
+            {c.projects.map((p: Link) => (
+              <a href={`/projects/${p.slug}/0`} class="related-link">
+                <span class="tag tag--project" style="margin:0;padding:0.15em 0.4em;font-size:0.6rem;">project</span>
+                {p.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {c.related && c.related.length > 0 && (
+        <div class="related-section" style="margin-top:2rem;padding-top:0;border:none;">
+          <p class="section-label">Related Concepts</p>
+          <div class="related-grid">
+            {c.related.map((r: Link) => (
+              <a href={`/concepts/${r.slug}`} class="related-link">
+                <span class="tag tag--concept" style="margin:0;padding:0.15em 0.4em;font-size:0.6rem;">concept</span>
+                {r.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {c.resources && c.resources.length > 0 && (
+        <div class="related-section" style="margin-top:2rem;padding-top:0;border:none;">
+          <p class="section-label">Resources</p>
+          <div class="related-grid">
+            {c.resources.map((r: Link) => (
+              <a href={`/resources/${r.slug}`} class="related-link">
+                <span class="tag tag--resource" style="margin:0;padding:0.15em 0.4em;font-size:0.6rem;">resource</span>
+                {r.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {c.experiments && c.experiments.length > 0 && (
+        <div class="related-section" style="margin-top:2rem;padding-top:0;border:none;">
+          <p class="section-label">Related Experiments</p>
+          <div class="related-grid">
+            {c.experiments.map((e: Link) => (
+              <a href={`/experiments/${e.slug}`} class="related-link">
+                <span class="tag tag--experiment" style="margin:0;padding:0.15em 0.4em;font-size:0.6rem;">exp</span>
+                {e.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div class="back-link">
+        <a href="/concepts">← back to concepts</a>
+      </div>
+    </div>
+
+    <!-- Right ToC -->
+    {headings.filter((h: Heading) => h.depth <= 3).length > 0 && (
+      <aside class="page-toc">
+        <p class="page-toc__label">On this page</p>
+        <nav class="page-toc__nav">
+          {headings
+            .filter((h: Heading) => h.depth <= 3)
+            .map((h: Heading) => (
+              <a
+                href={'#' + h.slug}
+                class={'page-toc__link page-toc__link--h' + h.depth}
+                data-heading={h.slug}
+              >
+                {h.text}
+              </a>
+            ))
+          }
+        </nav>
+      </aside>
+    )}
+
+  </div>
+</Base>
+
+<style>
+.breadcrumb {
+  padding: 2rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.breadcrumb a { color: var(--text-muted); }
+.breadcrumb a:hover { color: var(--text); }
+.mono-dim { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
+.back-link {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.back-link a {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+.back-link a:hover { color: var(--text); }
+</style>

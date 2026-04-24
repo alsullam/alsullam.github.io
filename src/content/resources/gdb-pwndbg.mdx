@@ -1,0 +1,54 @@
+---
+title: GDB + pwndbg
+author: Open Source
+category: Tools
+tags: [debugging, gdb, tools, heap, kernel]
+rating: 5
+---
+
+## What It Is
+
+GDB is the GNU Debugger — the standard tool for debugging C/C++ programs and Linux kernels.
+`pwndbg` is a GDB plugin that adds a much better display layer: registers, stack, memory,
+and heap visualized on every break.
+
+## Why pwndbg Over Vanilla GDB
+
+Vanilla GDB's output is terse and context-free. `pwndbg` adds:
+
+- **Automatic context display** on every break: registers, code disassembly, stack, and backtrace
+- **Heap inspection** — `heap`, `bins`, `malloc_chunk` commands that show glibc heap state visually
+- **Enhanced memory commands** — `telescope` for pointer chain dereferencing, `vmmap` for memory layout
+- **Disassembly with annotations** — jump arrows, call targets, string references
+
+## Essential GDB Commands for Systems Work
+
+```
+(gdb) target remote :1234       # connect to QEMU GDB stub
+(gdb) break *0xc0001000         # break at address (useful for kernel)
+(gdb) x/10i $rip                # examine 10 instructions at RIP
+(gdb) x/32xb 0x601020           # examine 32 bytes as hex
+(gdb) info registers            # dump all registers
+(gdb) bt                        # backtrace
+(gdb) layout asm                # TUI assembly view
+```
+
+## Kernel Debugging with QEMU
+
+For MiniKernel, I use GDB with QEMU's built-in GDB server:
+
+```sh
+# Terminal 1: launch QEMU paused
+qemu-system-x86_64 -kernel kernel.bin -s -S
+
+# Terminal 2: connect GDB
+gdb -ex "target remote :1234" -ex "symbol-file kernel.elf"
+```
+
+This gives full source-level debugging of a running kernel, including stepping through
+the boot sequence and interrupt handlers.
+
+## Verdict
+
+GDB is non-negotiable for systems work. Install `pwndbg` on day one — it transforms
+the debugging experience from frustrating to actually pleasant.

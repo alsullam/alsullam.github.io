@@ -1,0 +1,75 @@
+---
+title: Process Management
+category: Formats & ABIs
+tags: [fork, exec, wait, pid, process-group]
+projects:
+  - { title: TinyShell, slug: tinyshell }
+  - { title: SyscallTrace, slug: syscalltrace }
+related:
+  - { title: CPU Scheduling, slug: cpu-scheduling }
+  - { title: System Calls, slug: system-calls }
+  - { title: Virtual Memory, slug: virtual-memory }
+resources:
+  - { title: The Linux Programming Interface, slug: tlpi }
+  - {title: "Operating Systems: Three Easy Pieces", slug: ostep}
+experiments:
+  - { title: Stack growth direction on Linux, slug: stack-growth }
+---
+
+> Every process on Linux descends from `init`. The process tree is the fundamental organizing structure of the OS.
+
+## What Is a Process?
+
+A process is an instance of a running program. It has its own virtual address space,
+open file descriptors, signal handlers, working directory, and scheduling state.
+The kernel represents each process with a `task_struct`.
+
+## `fork()` — Creating Processes
+
+`fork()` creates an exact copy of the calling process. The child gets:
+
+- A copy of the parent's virtual address space (copy-on-write)
+- Copies of open file descriptors (pointing to the same underlying files)
+- A new PID; the parent's PID becomes the child's PPID
+
+```c
+pid_t pid = fork();
+if (pid == 0) {
+    // child process
+} else if (pid > 0) {
+    // parent process; pid = child's PID
+} else {
+    // fork failed
+}
+```
+
+## `exec()` — Replacing a Process Image
+
+`exec` replaces the current process's image with a new program.
+The PID stays the same; everything else (address space, open FDs, etc.) is replaced.
+`fork` + `exec` is the standard pattern for launching new programs.
+
+## `wait()` — Reaping Children
+
+When a child exits, it becomes a **zombie** — its resources are freed, but its exit
+status is held until the parent calls `wait()` or `waitpid()`. If the parent never
+waits, the zombie lingers until the parent exits (then `init` adopts and reaps it).
+
+## Process Groups and Sessions
+
+Every process belongs to a **process group**. Process groups belong to **sessions**.
+These groupings are used for job control and signal delivery:
+
+- `SIGINT` (Ctrl-C) goes to the entire foreground process group
+- `SIGHUP` goes to all processes in a session when the controlling terminal closes
+
+## File Descriptors Across fork
+
+After `fork`, parent and child share the same underlying open file descriptions
+(same offset, same flags). This is how pipes work — you fork, then each side closes
+the end it doesn't need.
+
+## Open Questions
+
+- How does `clone()` differ from `fork()`? (Hint: threads use `clone` with `CLONE_VM`)
+- What happens to `mmap`'d regions across `fork`?

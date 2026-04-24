@@ -1,0 +1,145 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('experiments');
+  return entries.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+const e = entry.data;
+
+type Link = { title: string; slug: string };
+type Heading = { depth: number; slug: string; text: string };
+
+const outcomeColor: Record<string, string> = {
+  success: 'var(--green)',
+  partial: 'var(--accent)',
+  failure: 'var(--red)',
+};
+---
+
+<Base title={e.title}>
+  <div class="toc-layout">
+
+    <!-- Main content -->
+    <div class="toc-content">
+      <div class="breadcrumb">
+        <a href="/">home</a><span>/</span>
+        <a href="/experiments">experiments</a><span>/</span>
+        <span style="color: var(--red);">{entry.id}</span>
+      </div>
+
+      <div class="page-header">
+        <div class="page-header__meta">
+          <span class="tag tag--experiment">experiment</span>
+          <span class="outcome-badge" style={'color:' + outcomeColor[e.outcome]}>
+            ● {e.outcome}
+          </span>
+          <span class="dot"></span>
+          <span class="mono-dim">{e.date}</span>
+        </div>
+        <h1>{e.title}</h1>
+        <div class="page-header__tags">
+          {e.tags.map((tag: string) => <span class="tag">{tag}</span>)}
+        </div>
+      </div>
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      {e.concepts && e.concepts.length > 0 && (
+        <div class="related-section">
+          <p class="section-label">Related Concepts</p>
+          <div class="related-grid">
+            {e.concepts.map((c: Link) => (
+              <a href={'/concepts/' + c.slug} class="related-link">
+                <span class="tag tag--concept" style="margin:0;padding:0.15em 0.4em;font-size:0.6rem;">concept</span>
+                {c.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {e.projects && e.projects.length > 0 && (
+        <div class="related-section" style="margin-top:2rem;padding-top:0;border:none;">
+          <p class="section-label">Related Projects</p>
+          <div class="related-grid">
+            {e.projects.map((p: Link) => (
+              <a href={'/projects/' + p.slug + '/0'} class="related-link">
+                <span class="tag tag--project" style="margin:0;padding:0.15em 0.4em;font-size:0.6rem;">project</span>
+                {p.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div class="back-link">
+        <a href="/experiments">← back to experiments</a>
+      </div>
+    </div>
+
+    <!-- Right ToC -->
+    {headings.filter((h: Heading) => h.depth <= 3).length > 0 && (
+      <aside class="page-toc">
+        <p class="page-toc__label">On this page</p>
+        <nav class="page-toc__nav">
+          {headings
+            .filter((h: Heading) => h.depth <= 3)
+            .map((h: Heading) => (
+              <a
+                href={'#' + h.slug}
+                class={'page-toc__link page-toc__link--h' + h.depth}
+                data-heading={h.slug}
+              >
+                {h.text}
+              </a>
+            ))
+          }
+        </nav>
+      </aside>
+    )}
+
+  </div>
+</Base>
+
+<style>
+.breadcrumb {
+  padding: 2rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.breadcrumb a { color: var(--text-muted); }
+.breadcrumb a:hover { color: var(--text); }
+.mono-dim { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); }
+.outcome-badge {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.back-link {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.back-link a {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+.back-link a:hover { color: var(--text); }
+</style>

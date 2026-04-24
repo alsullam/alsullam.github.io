@@ -1,0 +1,59 @@
+---
+title: Cache Coherence
+category: Memory
+tags: [mesi, cache, multicore, write-policy, invalidation]
+related:
+  - { title: Virtual Memory, slug: virtual-memory }
+  - { title: Memory Allocators, slug: memory-allocators }
+resources:
+  - { title: What Every Programmer Should Know About Memory, slug: ulrich-memory }
+---
+
+> In a multicore system, each core has its own private caches. Cache coherence is the protocol that keeps them from disagreeing about what's in memory.
+
+## The Problem
+
+Imagine core 0 reads value `x = 5` into its L1 cache. Core 1 then writes `x = 10`.
+Without a coherence protocol, core 0 would still see `5` — a stale value.
+Cache coherence ensures all cores observe a consistent view of shared memory.
+
+## The MESI Protocol
+
+MESI is the dominant cache coherence protocol on x86. Each cache line exists in one of four states:
+
+- **Modified** — dirty, owned exclusively; must write back before eviction
+- **Exclusive** — clean, owned exclusively; can transition to Modified on write
+- **Shared** — clean, possibly in multiple caches; cannot write without invalidating others
+- **Invalid** — not present or stale
+
+On a write, the core broadcasts an **invalidation** message. Other cores with the same
+line in Shared state transition it to Invalid. The writing core transitions to Modified.
+
+## False Sharing
+
+False sharing is a performance killer that arises when two cores write to different
+variables that happen to share the same cache line (64 bytes on x86).
+Even though neither core wants the other's data, every write causes invalidation bouncing.
+
+```c
+// Bad: x and y share a cache line
+struct { int x; int y; } shared;
+
+// Fixed: pad to separate cache lines
+struct { int x; char _pad[60]; int y; } padded;
+```
+
+## Write Policies
+
+- **Write-through** — writes go to cache and memory simultaneously. Simple, but slow.
+- **Write-back** — writes go to cache only; flushed to memory on eviction. Faster, requires coherence.
+
+## What This Means for Code
+
+Cache-conscious code avoids crossing cache line boundaries, groups frequently-accessed
+data together, and is careful about sharing mutable state across threads.
+
+## Open Questions
+
+- How does MOESI (adding Owned state) improve performance over MESI?
+- How does cache coherence interact with non-temporal stores (`movnt`)?

@@ -1,0 +1,54 @@
+---
+title: SyscallTrace
+chapter: 0
+desc: A ptrace-based syscall tracer similar to strace. Intercepts and logs all system calls made by a target process.
+status: paused
+date: September 2024
+tags: [linux, ptrace, syscalls, c]
+concepts:
+  - { title: System Calls, slug: system-calls }
+  - { title: Process Management, slug: process-management }
+---
+
+## Overview
+
+SyscallTrace uses Linux's `ptrace` API to intercept every system call made by a target process,
+log the call name and arguments, and print the return value — essentially a minimal `strace` clone.
+
+## How ptrace Works Here
+
+The tracer forks the target process with `PTRACE_TRACEME`, then uses `PTRACE_SYSCALL` to stop
+the child at every syscall entry and exit. On each stop, it reads registers to get the syscall
+number and arguments via `PTRACE_GETREGS`.
+
+```c
+pid_t pid = fork();
+if (pid == 0) {
+    ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+    execvp(argv[1], &argv[1]);
+}
+
+// Parent: trace loop
+while (1) {
+    waitpid(pid, &status, 0);
+    if (WIFEXITED(status)) break;
+
+    struct user_regs_struct regs;
+    ptrace(PTRACE_GETREGS, pid, NULL, &regs);
+    printf("syscall %lld\n", regs.orig_rax);
+    ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
+}
+```
+
+## Why It's Paused
+
+Argument formatting is harder than expected. Syscalls take pointers to strings and structs —
+to print them meaningfully you have to use `PTRACE_PEEKDATA` to read the child's memory
+byte by byte. I got this working for simple cases but the complexity of covering all 300+
+Linux syscalls with correct argument types is a larger project than anticipated.
+
+## What I Learned
+
+- How `ptrace` gives a parent process complete control over a child's execution
+- Why `strace` is so slow — every syscall requires two stops and multiple kernel roundtrips
+- The difference between syscall entry (rax = syscall nr) and exit (rax = return value)

@@ -1,0 +1,172 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = 'Deep Dummying', description = 'A personal low-level systems lab — knowledge graph, project hub, and learning archive.' } = Astro.props;
+const pageTitle = title === 'Deep Dummying' ? title : `${title} — Deep Dummying`;
+
+const navLinks = [
+  { href: '/projects', label: 'Projects' },
+  { href: '/concepts', label: 'Concepts' },
+  { href: '/resources', label: 'Resources' },
+  { href: '/experiments', label: 'Experiments' },
+  { href: '/about', label: 'About' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content={description} />
+  <title>{pageTitle}</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav__logo">
+      <img src="/logo.png" alt=";DD" class="nav__logo-img" />
+      <span class="nav__logo-text">Deep Dummying</span>
+    </a>
+
+    <button class="nav__hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <ul class="nav__links" id="nav-links">
+      {navLinks.map(link => (
+        <li>
+          <a
+            href={link.href}
+            class={currentPath.startsWith(link.href) ? 'active' : ''}
+          >
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <div class="main-content page-wrapper">
+    <slot />
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div class="footer__left">
+          ;DD — Deep Dummying<br />
+          Low-level systems lab<br />
+          Built by <a href="https://github.com/saeeedhany" target="_blank" rel="noopener" style="color: var(--text-secondary); border-bottom: 1px solid var(--border-hover); transition: var(--transition);">Saeed</a>
+        </div>
+        <ul class="footer__links">
+          {navLinks.map(link => (
+            <li><a href={link.href}>{link.label}</a></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Status Bar Widget -->
+  <div class="status-bar" id="status-bar">
+    <div class="status-bar__item" id="sb-music" title="Now Playing">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <span id="sb-music-text">Not Playing</span>
+    </div>
+    <div class="status-bar__item" title="Local time">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span id="sb-time-text">--:-- --</span>
+    </div>
+    <div class="status-bar__item" title="Location">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span>Cairo, Egypt</span>
+    </div>
+  </div>
+
+  <script>
+    // Nav hamburger
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('nav-links');
+    hamburger?.addEventListener('click', () => {
+      navLinks?.classList.toggle('open');
+    });
+
+    // Live clock
+    function updateTime() {
+      const now = new Date();
+      const h = now.getHours();
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      const el = document.getElementById('sb-time-text');
+      if (el) el.textContent = `${h12}:${m}:${s} ${ampm}`;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // Spotify now-playing — polls /api/now-playing every 30s
+    async function updateNowPlaying() {
+      const el = document.getElementById('sb-music');
+      const textEl = document.getElementById('sb-music-text');
+      if (!el || !textEl) return;
+      try {
+        const res = await fetch('/api/now-playing');
+        const data = await res.json();
+        if (data.isPlaying) {
+          const label = `${data.title} — ${data.artist}`;
+          textEl.textContent = label.length > 36 ? label.slice(0, 34) + '…' : label;
+          el.style.color = 'var(--green)';
+          if (data.songUrl) {
+            el.style.cursor = 'pointer';
+            el.onclick = () => window.open(data.songUrl, '_blank');
+          }
+        } else {
+          textEl.textContent = 'Not Playing';
+          el.style.color = '';
+          el.style.cursor = 'default';
+          el.onclick = null;
+        }
+      } catch {
+        // API not available (local dev) — stay silent
+      }
+    }
+    updateNowPlaying();
+    setInterval(updateNowPlaying, 30_000);
+
+    // ToC scroll-spy — works for page-toc and proj-toc
+    const tocLinks = document.querySelectorAll('.page-toc__link, .proj-toc__link');
+    if (tocLinks.length > 0) {
+      const headingEls = document.querySelectorAll('h1[id], h2[id], h3[id]');
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              tocLinks.forEach(l => l.classList.remove('active'));
+              const id = entry.target.id;
+              const active = document.querySelector(
+                '.page-toc__link[data-heading="' + id + '"], .proj-toc__link[data-heading="' + id + '"]'
+              );
+              active?.classList.add('active');
+            }
+          });
+        },
+        { rootMargin: '-15% 0% -70% 0%' }
+      );
+      headingEls.forEach(h => observer.observe(h));
+    }
+  </script>
+</body>
+</html>

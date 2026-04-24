@@ -1,0 +1,46 @@
+---
+title: What Every Programmer Should Know About Memory
+author: Ulrich Drepper
+category: Articles & Papers
+tags: [memory, cache, performance, numa, prefetch]
+rating: 5
+link: https://people.freebsd.org/~lstewart/articles/cpumemory.pdf
+---
+
+## What It Is
+
+A 114-page paper by Ulrich Drepper (glibc maintainer) covering the entire memory hierarchy —
+DRAM internals, CPU caches, TLBs, NUMA, prefetching, and what all of this means for how
+you write code. Published around 2007 but the fundamentals haven't changed.
+
+## Why It Changed How I Write Code
+
+This paper gave me a mental model for why some code is fast and some is slow in ways
+that have nothing to do with algorithm complexity. A cache miss to main memory costs ~100 ns —
+roughly 300 CPU cycles at 3 GHz. Knowing this changes everything.
+
+## Key Sections
+
+- **Part 2 — CPU Caches.** L1/L2/L3 structure, cache lines, set-associativity, eviction policy.
+  After this section, "cache-friendly code" stops being a vague concept.
+- **Part 3 — Virtual Memory.** TLB structure, hugepages, page fault costs. Complements CSAPP Ch. 9.
+- **Part 4 — NUMA.** Non-uniform memory access across sockets. Essential for multi-socket server code.
+- **Part 5 — What Programmers Can Do.** Concrete optimizations: data alignment, access patterns,
+  prefetch hints, false sharing avoidance. Actionable.
+
+## Practical Takeaways
+
+- Access memory sequentially when possible — hardware prefetcher can't predict random access
+- Keep hot data in a struct together (struct-of-arrays vs. array-of-structs trade-offs)
+- False sharing (two threads on one cache line) can be worse than a lock
+- `__builtin_prefetch` is rarely needed if your access pattern is regular
+
+## Caveats
+
+- Specific numbers (latencies, cache sizes) are from 2007 hardware — the *ratios* are what matter
+- Very dense; plan to read it in sections over time, not in one sitting
+
+## Verdict
+
+One of the most practically useful papers in systems programming. The section on cache-conscious
+data structures alone is worth the read.

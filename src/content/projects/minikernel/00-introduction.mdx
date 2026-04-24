@@ -1,0 +1,67 @@
+---
+title: MiniKernel
+chapter: 0
+desc: A bare-metal OS kernel written in C with basic process scheduling, memory paging, and interrupt handling. Bootable via GRUB on x86.
+status: active
+date: November 2024
+tags: [os, c, x86, kernel, interrupts, grub]
+github: https://github.com/ddumying/minikernel
+concepts:
+  - { title: Virtual Memory, slug: virtual-memory }
+  - { title: CPU Scheduling, slug: cpu-scheduling }
+  - {title: "Interrupts & IDT", slug: interrupts}
+resources:
+  - { title: OSDev Wiki, slug: osdev-wiki }
+  - { title: Intel SDM, slug: intel-sdm }
+experiments:
+  - { title: Context switch overhead, slug: ctx-switch-overhead }
+  - { title: Page fault latency, slug: pagefault-latency }
+---
+
+## Overview
+
+MiniKernel started as a way to understand what actually happens before `main()` is called.
+It's a minimal x86 kernel that handles the transition from real mode to protected mode,
+sets up the GDT/IDT, enables paging, and runs a simple round-robin scheduler.
+
+## Architecture
+
+The kernel is structured around three core subsystems:
+
+- **Boot** — GRUB multiboot, protected mode setup, GDT initialization
+- **Memory** — Physical memory manager (bitmap allocator), virtual memory with 4KB pages
+- **Processes** — Simple PCB, round-robin scheduler, context switch via TSS
+
+## Boot Sequence
+
+The kernel follows a well-defined boot sequence: GRUB loads the multiboot image,
+the assembly stub sets up a minimal stack and calls the C entry point.
+From there the GDT is loaded, IDT configured, and paging enabled before the scheduler kicks in.
+
+```asm
+; boot.asm — minimal entry point
+section .text
+global _start
+_start:
+    mov esp, stack_top
+    push ebx        ; multiboot info ptr
+    call kmain
+    hlt
+```
+
+## Memory Layout
+
+The kernel identity-maps the first 4MB for itself, then manages physical pages
+with a bitmap allocator. Each process gets its own page directory and 4KB page tables.
+
+## What I Learned
+
+- How the CPU transitions between privilege levels (ring 0/3)
+- What a page fault actually is at the hardware level
+- How context switching works via the x86 TSS structure
+- Why GRUB alignment matters for multiboot headers
+
+## Known Issues
+
+The scheduler has no preemption yet — it's cooperative only.
+Memory freeing is not fully implemented. SMP support is a future goal.

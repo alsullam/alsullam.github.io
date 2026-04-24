@@ -1,0 +1,83 @@
+---
+title: Virtual Memory
+category: Memory
+tags: [paging, tlb, page-fault, mmu, x86]
+projects:
+  - { title: MiniKernel, slug: minikernel }
+  - { title: MemArena, slug: memarena }
+related:
+  - { title: Memory Allocators, slug: memory-allocators }
+  - { title: Cache Coherence, slug: cache-coherence }
+  - { title: Privilege Levels, slug: privilege-levels }
+resources:
+  - { title: CSAPP — Chapter 9, slug: csapp }
+  - { title: Intel SDM Vol. 3A, slug: intel-sdm }
+experiments:
+  - { title: Page fault latency test, slug: pagefault-latency }
+---
+
+> Virtual memory creates the illusion that each process has access to a large, contiguous, and private address space — even though physical RAM is shared, fragmented, and limited.
+
+## What Is Virtual Memory?
+
+Virtual memory is a memory management abstraction provided by the OS and MMU hardware.
+Every process sees a clean address space from `0x0` to some upper limit (e.g. `0xFFFFFFFF` on 32-bit).
+These virtual addresses are translated to physical addresses by the MMU using page tables.
+
+This indirection gives three powerful properties:
+
+- **Isolation** — processes can't access each other's memory
+- **Over-commitment** — you can allocate more than physical RAM (swap)
+- **Flexibility** — memory layout doesn't need to be contiguous in RAM
+
+## Paging
+
+On x86-64, virtual memory is implemented via a 4-level page table hierarchy.
+A virtual address is split into 5 fields:
+
+```
+[PML4 index][PDPT index][PD index][PT index][Page offset]
+ 9 bits      9 bits      9 bits    9 bits     12 bits
+```
+
+Each level is a 4KB page of 512 entries, pointing either to the next level or to the
+final physical page frame. The CPU walks this tree on every memory access.
+
+## The TLB
+
+Walking 4 levels of page tables on every memory access would be devastatingly slow.
+The Translation Lookaside Buffer (TLB) is a hardware cache of recent virtual-to-physical
+translations. A TLB miss triggers a page table walk. A context switch (usually) invalidates
+the TLB entirely via a CR3 reload — unless PCID is used.
+
+## Page Faults
+
+When the CPU can't resolve a virtual address (entry not present, wrong permissions),
+it raises a **page fault exception** (#PF). The OS handler receives the faulting address
+via CR2 and an error code describing the reason.
+
+Common page fault causes:
+
+- **Access to unmapped memory** — segfault territory
+- **Demand paging** — loading a page that's been evicted to disk
+- **Copy-on-write** — after `fork()`, writing to a shared page
+- **Guard pages** — intentional protection at stack boundaries
+
+## Kernel vs User Space
+
+On x86-64 Linux, the virtual address space is split: the lower half (up to ~128TB)
+belongs to user processes, and the upper half is mapped to the kernel. This way,
+the kernel is always accessible (but protected) from any process context,
+making syscalls fast without a full CR3 switch.
+
+## Key Data Structures in Linux
+
+- `mm_struct` — per-process memory descriptor
+- `vm_area_struct` — describes a contiguous virtual memory region
+- `pgd_t, pud_t, pmd_t, pte_t` — page table entry types
+
+## Open Questions I'm Exploring
+
+- How does huge page support (2MB, 1GB pages) affect TLB performance?
+- What's the real cost of a page fault in cycles?
+- How does KPTI (Meltdown mitigation) affect the kernel/user split?

@@ -1,0 +1,109 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const experiments = [
+  {
+    title: 'Page fault latency measurement',
+    slug: 'pagefault-latency',
+    desc: 'Measuring the actual latency of a page fault on Linux using rdtsc. Results were more variable than expected.',
+    outcome: 'success',
+    tags: ['paging', 'benchmarking', 'linux'],
+    concepts: ['virtual-memory'],
+    date: '2025-02',
+  },
+  {
+    title: 'Context switch overhead',
+    slug: 'ctx-switch-overhead',
+    desc: 'How much time does a context switch actually take? Tested with getpid() + pipes, compared to thread switching.',
+    outcome: 'success',
+    tags: ['scheduling', 'performance', 'linux'],
+    concepts: ['cpu-scheduling'],
+    date: '2025-01',
+  },
+  {
+    title: 'Heap allocator fragmentation study',
+    slug: 'allocator-fragmentation',
+    desc: 'Testing how different allocation patterns affect malloc fragmentation. Tried to break glibc\'s allocator.',
+    outcome: 'partial',
+    tags: ['memory', 'heap', 'allocator'],
+    concepts: ['memory-allocators'],
+    date: '2024-12',
+  },
+  {
+    title: 'ELF section stripping impact',
+    slug: 'elf-stripping',
+    desc: 'What happens to runtime behavior when you strip debug symbols and non-essential sections from an ELF?',
+    outcome: 'success',
+    tags: ['elf', 'binary', 'size'],
+    concepts: ['elf-format'],
+    date: '2025-03',
+  },
+  {
+    title: 'Stack growth direction on Linux',
+    slug: 'stack-growth',
+    desc: 'Empirically confirming that stacks grow downward on x86-64, measuring guard page size and stack expansion.',
+    outcome: 'success',
+    tags: ['stack', 'memory', 'linux'],
+    concepts: ['virtual-memory', 'process-management'],
+    date: '2024-11',
+  },
+  {
+    title: 'Trying to build a lockless ring buffer',
+    slug: 'lockless-ring',
+    desc: 'Attempted to build a lockless SPSC ring buffer. Failed twice due to subtle memory ordering issues. Notes on why.',
+    outcome: 'failure',
+    tags: ['concurrency', 'memory-ordering', 'atomics'],
+    concepts: [],
+    date: '2025-01',
+  },
+];
+
+const outcomeColor = {
+  success: 'var(--green)',
+  partial: 'var(--accent)',
+  failure: 'var(--red)',
+};
+---
+
+<Base title="Experiments">
+  <div class="container">
+    <div class="page-header">
+      <p class="section-label">04 — Experiments</p>
+      <h1>Experiments</h1>
+      <p style="max-width: 52ch; margin-top: 0.75rem; color: var(--text-muted);">
+        Small tests, failed attempts, and measurements. 
+        The failures are documented as carefully as the successes.
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 1.5rem; margin-bottom: 2.5rem; flex-wrap: wrap;">
+      {(['success', 'partial', 'failure'] as const).map(o => (
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style={`width: 8px; height: 8px; border-radius: 50%; background: ${outcomeColor[o]}; display: inline-block;`}></span>
+          <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">{o}</span>
+        </div>
+      ))}
+    </div>
+
+    <ul class="index-list">
+      {experiments.map((e, i) => (
+        <li class="index-item">
+          <span class="index-item__num">{String(i+1).padStart(2, '0')}</span>
+          <div class="index-item__content">
+            <a href={`/experiments/${e.slug}`} class="index-item__title">{e.title}</a>
+            <div class="index-item__meta">
+              <span class="tag tag--experiment">exp</span>
+              <span style={`font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: ${outcomeColor[e.outcome]};`}>
+                {e.outcome}
+              </span>
+              <span class="dot"></span>
+              <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted);">{e.date}</span>
+              {e.tags.slice(0, 2).map(tag => <span class="tag">{tag}</span>)}
+            </div>
+            <p class="index-item__desc">{e.desc}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Base>

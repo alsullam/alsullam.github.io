@@ -1,0 +1,38 @@
+---
+title: OSDev Wiki
+author: Community
+category: References
+tags: [os, x86, boot, kernel, gdt, idt]
+rating: 4
+link: https://wiki.osdev.org/
+---
+
+## What It Is
+
+A community-maintained wiki covering bare-metal OS development from the ground up.
+Covers bootloading, protected mode setup, GDT, IDT, paging, keyboard drivers, VGA text mode,
+memory management, and everything else you need to go from nothing to a running kernel.
+
+## What It's Good For
+
+- **Getting started fast.** The "Bare Bones" tutorial gets you to a bootable kernel in an hour.
+- **Specific how-to articles.** "Setting up the GDT", "Creating an IDT", "Paging" — each article is practical and focused.
+- **Interrupt tables.** The IRQ and exception reference pages are more readable than the Intel SDM.
+- **Community knowledge.** Edge cases and pitfalls documented by people who've hit them.
+
+## How I Used It
+
+Essential companion to the Intel SDM while building MiniKernel. When Vol. 3A's GDT explanation
+felt abstract, the OSDev GDT article gave me the concrete C struct layout and load sequence.
+The "Interrupt Service Routines" article saved hours of debugging IDT handler alignment.
+
+## Caveats
+
+- Quality varies by article — some are excellent, some are outdated or incomplete
+- A few articles have subtle bugs in example code (especially the older ones) — always cross-reference with Intel SDM
+- Very x86-focused; less coverage of ARM or RISC-V bare-metal
+- Not a substitute for understanding *why* things work — pair with the SDM and OSTEP
+
+## Verdict
+
+Invaluable for kernel development. Start here; verify with the Intel SDM.

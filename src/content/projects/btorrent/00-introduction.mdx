@@ -1,0 +1,93 @@
+---
+title: BTorrent
+chapter: 0
+desc: A BitTorrent client built from scratch in C. Implements the core protocol — peer discovery, piece selection, and parallel downloading over raw TCP.
+status: wip
+date: April 2025
+tags: [networking, bittorrent, c, tcp, sockets, protocols]
+github: https://github.com/ddumbying/btorrent
+concepts:
+  - { title: I/O Models, slug: io-models }
+  - { title: System Calls, slug: system-calls }
+  - { title: Process Management, slug: process-management }
+---
+
+## Overview
+
+BTorrent is a from-scratch BitTorrent client in C — no libtorrent, no libcurl, just POSIX
+sockets and the protocol spec. The goal is to understand how peer-to-peer file transfer
+actually works at the byte level: torrent parsing, tracker communication, peer handshakes,
+piece verification, and parallel downloading.
+
+## How BitTorrent Works (the short version)
+
+A `.torrent` file contains metadata: file names, sizes, and the file split into fixed-size
+**pieces**, each with a SHA-1 hash. To download:
+
+1. Parse the `.torrent` (bencoded format)
+2. Contact the **tracker** (HTTP/UDP) to get a list of peers
+3. **Handshake** each peer over TCP
+4. Exchange **bitfields** — who has which pieces
+5. Send **interested** / **unchoke** messages to start downloading
+6. Request pieces in parallel, verify each SHA-1, write to disk
+
+## What's Implemented
+
+- **Bencode parser** — reads `.torrent` files (dicts, lists, ints, strings)
+- **Tracker HTTP announce** — sends `GET` with info_hash, peer_id, port, downloaded/uploaded
+- **Peer TCP handshake** — the 68-byte protocol handshake with `BitTorrent protocol` header
+- **Message framing** — length-prefixed messages: choke, unchoke, interested, bitfield, request, piece
+
+## Current Architecture
+
+```c
+// Main loop: non-blocking sockets + select() for multiplexing
+int nfds = 0;
+fd_set read_fds, write_fds;
+FD_ZERO(&read_fds);
+
+for (int i = 0; i < peer_count; i++) {
+    if (peers[i].state == CONNECTED) {
+        FD_SET(peers[i].fd, &read_fds);
+        nfds = MAX(nfds, peers[i].fd + 1);
+    }
+}
+
+select(nfds, &read_fds, &write_fds, NULL, &timeout);
+```
+
+Managing multiple peers without blocking on any single one is the core challenge.
+Currently using `select()` — planning to move to `epoll` for cleaner scalability.
+
+## The Bencode Parser
+
+BitTorrent uses bencode for all structured data. The format is simple but recursive:
+
+```
+i42e          → integer 42
+4:spam        → string "spam"
+l4:spam i42ee → list ["spam", 42]
+d3:key5:valuee → dict {"key": "value"}
+```
+
+The parser is a hand-written recursive descent — about 200 lines of C.
+
+## Piece Selection Strategy
+
+Currently using **sequential** selection (piece 0, 1, 2...) for simplicity.
+Planning to implement **rarest-first** — prioritize pieces fewest peers have,
+which improves swarm health and reduces the chance of getting stuck.
+
+## What I'm Working On
+
+- SHA-1 verification of received pieces (using OpenSSL's EVP interface)
+- Disk writing — assembling pieces into the final file layout
+- Choke/unchoke algorithm — the tit-for-tat reciprocation mechanism
+- UDP tracker support (more common than HTTP now)
+
+## What I've Learned
+
+- How bencoding works and why it was chosen (self-delimiting, no schema needed)
+- The BitTorrent handshake is stateful — ordering of messages matters
+- Non-blocking I/O with `select()` is manageable for tens of peers, painful for hundreds
+- SHA-1 piece verification is what makes the protocol trustless

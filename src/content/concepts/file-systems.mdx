@@ -1,0 +1,68 @@
+---
+title: File Systems
+category: Storage & I/O
+tags: [inode, ext4, journaling, vfs, block-device]
+related:
+  - { title: I/O Models, slug: io-models }
+  - { title: Virtual Memory, slug: virtual-memory }
+  - { title: System Calls, slug: system-calls }
+resources:
+  - {title: "Operating Systems: Three Easy Pieces", slug: ostep}
+  - { title: The Linux Programming Interface, slug: tlpi }
+---
+
+> A filesystem is the answer to the question: how do you store and retrieve named data on a device that only understands block reads and writes?
+
+## The Core Abstraction
+
+A filesystem provides a hierarchical namespace (directories and files) over a flat sequence
+of fixed-size blocks on a storage device. The kernel's VFS (Virtual File System) layer
+provides a uniform interface (`open`, `read`, `write`, `stat`) regardless of the underlying filesystem.
+
+## Inodes
+
+Every file and directory is represented by an **inode** — a data structure storing metadata:
+permissions, owner, timestamps, size, and crucially, pointers to the data blocks.
+
+The inode does **not** store the filename. Filenames live in directory entries (dentries),
+which map names → inode numbers. This is why hard links work: two dentries pointing to the same inode.
+
+```
+Directory entry:  "main.c"  →  inode 42
+Inode 42:         mode=0644, size=1337, blocks=[block_104, block_105, ...]
+Block 104:        (first 4096 bytes of file data)
+```
+
+## Extent-Based vs Block-Map
+
+- **Block map (ext2)** — inode contains direct, indirect, double-indirect block pointers. Simple but slow for large files.
+- **Extents (ext4)** — inode contains extents: `(start_block, length)` pairs. Far fewer metadata lookups for large contiguous files.
+
+## Journaling
+
+Without journaling, a crash mid-write can leave the filesystem in an inconsistent state
+(e.g. inode updated but block bitmap not). A journal (write-ahead log) records intended changes
+before applying them. On recovery, incomplete transactions are either replayed or discarded.
+
+ext4 supports three journaling modes:
+- **journal** — both data and metadata journaled (slowest, safest)
+- **ordered** — metadata journaled, data flushed first (default)
+- **writeback** — metadata journaled only (fastest, least safe)
+
+## The VFS Layer
+
+Linux's VFS defines a set of function pointers (`inode_operations`, `file_operations`,
+`super_operations`) that each filesystem must implement. This is why `read()` works
+identically on ext4, tmpfs, procfs, and network filesystems.
+
+## `procfs` and `sysfs`
+
+Not all filesystems store data on disk. `/proc` and `/sys` are virtual filesystems:
+they generate their content dynamically from kernel data structures.
+`/proc/PID/maps` shows a process's memory map; `/sys/block/sda/stat` shows disk I/O stats.
+
+## Open Questions
+
+- How does copy-on-write (Btrfs, ZFS) change the journaling model?
+- What is `fsync()` actually doing, and why is it so expensive?
+- How does `mmap` interact with the page cache for file-backed mappings?

@@ -1,0 +1,79 @@
+---
+title: I/O Models
+category: Storage & I/O
+tags: [blocking, nonblocking, epoll, io_uring, async]
+related:
+  - { title: System Calls, slug: system-calls }
+  - { title: File Systems, slug: file-systems }
+  - { title: Process Management, slug: process-management }
+resources:
+  - { title: The Linux Programming Interface, slug: tlpi }
+---
+
+> How your program waits for I/O is one of the most consequential architectural decisions you can make. The difference between blocking and async I/O is the difference between serving 100 vs. 100,000 connections.
+
+## Blocking I/O
+
+The default. A `read()` call blocks the calling thread until data is available.
+Simple to reason about, but each blocked thread consumes a kernel stack (~8KB).
+Thousands of concurrent connections = thousands of blocked threads = memory pressure and scheduling overhead.
+
+```c
+// This thread does nothing while waiting
+ssize_t n = read(fd, buf, sizeof(buf)); // blocks until data arrives
+```
+
+## Non-blocking I/O
+
+Set `O_NONBLOCK` on an fd. `read()` returns immediately with `EAGAIN` if no data is available.
+The program must poll or check readiness another way. Avoids blocking, but busy-waiting wastes CPU.
+
+## `select` and `poll`
+
+The traditional multiplexing solution: pass a set of fds; the kernel tells you which are ready.
+
+- **`select`** — limited to 1024 fds, O(n) scan, fd_set must be rebuilt each call
+- **`poll`** — removes the 1024 limit, still O(n) — not scalable to 10k+ fds
+
+## `epoll` — The Linux Scalable Solution
+
+`epoll` uses an event-driven model. Register interest once; get notified only when an fd is ready.
+O(1) per event regardless of how many fds are watched. The basis for Node.js, nginx, Redis.
+
+```c
+int epfd = epoll_create1(0);
+epoll_ctl(epfd, EPOLL_CTL_ADD, sockfd, &ev);  // register once
+
+// Event loop
+while (1) {
+    int n = epoll_wait(epfd, events, MAX_EVENTS, -1); // blocks efficiently
+    for (int i = 0; i < n; i++) {
+        handle(events[i].data.fd);
+    }
+}
+```
+
+**Edge-triggered vs Level-triggered:** Edge-triggered (`EPOLLET`) fires once when state changes;
+level-triggered fires as long as the fd is ready. Edge-triggered is more efficient but trickier to use correctly.
+
+## `io_uring` — The Modern Async Interface
+
+Introduced in Linux 5.1. Uses two shared ring buffers (submission queue + completion queue)
+to submit and collect I/O operations without any syscall overhead in the hot path.
+Supports truly async I/O for files, sockets, and more.
+
+```c
+// Submit without a syscall in the fast path
+struct io_uring_sqe *sqe = io_uring_get_sqe(&ring);
+io_uring_prep_read(sqe, fd, buf, len, 0);
+io_uring_submit(&ring); // syscall only to kick the kernel
+```
+
+`io_uring` can operate in polling mode (zero syscalls) on high-performance storage.
+It's rapidly becoming the preferred async I/O interface for latency-sensitive systems.
+
+## Open Questions
+
+- How does `io_uring` compare to `epoll` for network I/O at scale?
+- What is `IORING_FEAT_FAST_POLL` and how does it reduce context switches?
+- How does Windows IOCP compare architecturally to `io_uring`?

@@ -1,0 +1,122 @@
+---
+import Base from './Base.astro';
+
+interface Props {
+  frontmatter: {
+    title: string;
+    outcome: 'success' | 'partial' | 'failure';
+    date: string;
+    tags: string[];
+    concepts?: { title: string; slug: string }[];
+    projects?: { title: string; slug: string }[];
+  };
+}
+
+const { frontmatter: e } = Astro.props;
+
+const outcomeColor = {
+  success: 'var(--green)',
+  partial: 'var(--accent)',
+  failure: 'var(--red)',
+};
+---
+
+<Base title={e.title}>
+  <div class="container--narrow">
+    <div class="breadcrumb">
+      <a href="/">home</a>
+      <span>/</span>
+      <a href="/experiments">experiments</a>
+      <span>/</span>
+      <span style="color: var(--red);">{e.title.toLowerCase().slice(0, 24)}&hellip;</span>
+    </div>
+
+    <div class="page-header">
+      <div class="page-header__meta">
+        <span class="tag tag--experiment">experiment</span>
+        <span class="outcome-badge" style={`color: ${outcomeColor[e.outcome]};`}>
+          ● {e.outcome}
+        </span>
+        <span class="dot"></span>
+        <span class="meta-date">{e.date}</span>
+      </div>
+      <h1>{e.title}</h1>
+      <div class="page-header__tags">
+        {e.tags.map(tag => <span class="tag">{tag}</span>)}
+      </div>
+    </div>
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    {e.concepts && e.concepts.length > 0 && (
+      <div class="related-section">
+        <p class="section-label">Related Concepts</p>
+        <div class="related-grid">
+          {e.concepts.map(c => (
+            <a href={`/concepts/${c.slug}`} class="related-link">
+              <span class="tag tag--concept" style="margin: 0; padding: 0.15em 0.4em; font-size: 0.6rem;">concept</span>
+              {c.title}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {e.projects && e.projects.length > 0 && (
+      <div class="related-section" style="margin-top: 2rem; padding-top: 0; border: none;">
+        <p class="section-label">Related Projects</p>
+        <div class="related-grid">
+          {e.projects.map(p => (
+            <a href={`/projects/${p.slug}`} class="related-link">
+              <span class="tag tag--project" style="margin: 0; padding: 0.15em 0.4em; font-size: 0.6rem;">project</span>
+              {p.title}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <div class="back-link">
+      <a href="/experiments">← back to experiments</a>
+    </div>
+  </div>
+</Base>
+
+<style>
+.breadcrumb {
+  padding: 2rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.breadcrumb a { color: var(--text-muted); }
+.breadcrumb a:hover { color: var(--text); }
+.outcome-badge {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.meta-date {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+.back-link {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.back-link a {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+.back-link a:hover { color: var(--text); }
+</style>

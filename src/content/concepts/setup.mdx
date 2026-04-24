@@ -1,0 +1,62 @@
+---
+title: My Setup & Environment
+category: Meta
+tags: [setup, tools, environment, linux, editor]
+pinned: true
+---
+
+## Machine
+
+- **OS** — Arch Linux (btw)
+- **Kernel** — Linux 6.6 (custom config, stripped down)
+- **CPU** — Intel Core i7-11th gen @ 3.2GHz
+- **RAM** — 16GB DDR4
+- **Shell** — zsh + starship prompt
+
+## Editor
+
+- **Neovim** — primary editor, lua config from scratch
+- **Plugins** — lazy.nvim, nvim-lspconfig, clangd for C/C++, treesitter for syntax
+- **Theme** — custom dark colorscheme matching this site's palette
+
+## Terminal
+
+- **Kitty** — GPU-accelerated, ligatures, good color support
+- **tmux** — persistent sessions, split panes for code + build + GDB side-by-side
+- **Font** — JetBrains Mono Nerd Font, 13px
+
+## Build & Debug
+
+- **GCC / Clang** — depending on the project. Clang for better diagnostics.
+- **GDB + pwndbg** — kernel and userspace debugging
+- **QEMU** — all kernel experiments run here, GDB stub attached
+- **Make** — simple Makefiles, no CMake unless forced to
+- **Valgrind** — memory error detection in userspace projects
+
+## Key Tools
+
+- **objdump / readelf / nm** — ELF inspection daily
+- **strace / ltrace** — syscall and library call tracing
+- **perf** — CPU profiling, cache miss analysis
+- **gdb** — obviously
+- **htop / btop** — system monitoring
+- **ripgrep (rg)** — faster grep, used everywhere
+
+## Workflow
+
+Most sessions follow this pattern:
+
+```
+tmux new-session
+  ├── pane 1: nvim (code)
+  ├── pane 2: make && qemu (build + run)
+  └── pane 3: gdb (debug)
+```
+
+For kernel work, QEMU runs with `-s -S` and GDB connects via `:1234`.
+Everything is version-controlled, committed after each working state.
+
+## Dotfiles
+
+All config lives in `~/.dotfiles` — Neovim, tmux, zsh, kitty, starship.
+Symlinked via a small shell script.

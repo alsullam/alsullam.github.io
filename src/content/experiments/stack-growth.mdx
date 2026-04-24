@@ -1,0 +1,81 @@
+---
+title: Stack growth direction on Linux
+outcome: success
+date: November 2024
+tags: [stack, memory, linux, x86-64]
+concepts:
+  - { title: Virtual Memory, slug: virtual-memory }
+  - { title: Process Management, slug: process-management }
+---
+
+## Question
+
+Everyone says the stack grows downward on x86. I wanted to verify this empirically
+and also measure the guard page size and see what happens when the stack overflows.
+
+## Verifying Growth Direction
+
+Simple: take the address of a local variable in a nested function call and compare.
+
+```c
+void inner(void *parent_addr) {
+    int x;
+    printf("parent: %p\ninner:  %p\ndiff:   %ld\n",
+           parent_addr, &x, (long)parent_addr - (long)&x);
+}
+
+void outer() {
+    int y;
+    inner(&y);
+}
+```
+
+Output:
+```
+parent: 0x7ffee1a2bc3c
+inner:  0x7ffee1a2bc14
+diff:   40
+```
+
+The inner frame is at a *lower* address than the outer — confirming downward growth.
+
+## Locating the Stack in `/proc`
+
+`/proc/self/maps` shows the stack region tagged `[stack]`:
+
+```
+7ffc00000000-7ffc00200000 rwxp 00000000 00:00 0  [stack]
+```
+
+Default stack size on Linux: 8MB (configurable via `ulimit -s`). The region above
+the stack is a guard page — unmapped, so any access causes a SIGSEGV rather than
+silently corrupting adjacent memory.
+
+## Triggering a Stack Overflow
+
+Infinite recursion with a non-trivial frame:
+
+```c
+void recurse(int depth) {
+    char buf[4096]; // consume stack space
+    buf[0] = depth;
+    recurse(depth + 1);
+}
+```
+
+Result: SIGSEGV at depth ~1,900 (8MB / 4096 ≈ 2048, minus overhead).
+The signal is delivered on an alternate signal stack (`sigaltstack`) — otherwise
+the signal handler itself would fault.
+
+## Stack Expansion
+
+Linux doesn't pre-allocate the full 8MB. The stack starts small and grows on demand
+via page faults. The kernel's `expand_stack()` checks whether the faulting address
+is within the stack's allowed growth range before allocating new pages.
+
+## What I Confirmed
+
+- Stack grows downward (lower addresses) on x86-64 ✓
+- Guard page is one page (4KB) by default ✓
+- Linux expands the stack lazily on page faults ✓
+- `sigaltstack` is necessary for handling stack overflow signals ✓

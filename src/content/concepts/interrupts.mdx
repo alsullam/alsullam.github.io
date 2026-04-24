@@ -1,0 +1,77 @@
+---
+title: Interrupts & IDT
+category: CPU & Execution
+tags: [interrupts, idt, irq, exceptions, x86]
+projects:
+  - { title: MiniKernel, slug: minikernel }
+related:
+  - { title: Privilege Levels, slug: privilege-levels }
+  - { title: CPU Scheduling, slug: cpu-scheduling }
+  - { title: System Calls, slug: system-calls }
+resources:
+  - { title: Intel SDM Vol. 3A, slug: intel-sdm }
+  - { title: OSDev Wiki, slug: osdev-wiki }
+---
+
+> An interrupt is the hardware's way of saying "stop what you're doing — something needs attention right now."
+
+## What Is an Interrupt?
+
+An interrupt is an asynchronous signal to the CPU that something external requires attention —
+a keypress, a network packet arriving, a timer firing. The CPU suspends its current execution,
+saves its state, runs the appropriate handler, then resumes. This mechanism is fundamental to
+how the OS maintains control over hardware and running processes.
+
+## Interrupts vs. Exceptions
+
+- **Hardware interrupts (IRQs)** — triggered by external devices (PIC/APIC)
+- **Software interrupts** — triggered by the `int` instruction (legacy syscalls used `int 0x80`)
+- **Exceptions** — triggered by the CPU itself: divide-by-zero (#DE), page fault (#PF), general protection fault (#GP)
+
+## The IDT
+
+The Interrupt Descriptor Table (IDT) is an array of up to 256 entries, each describing
+a handler for a specific interrupt or exception vector. The CPU loads its address and limit
+from the `IDTR` register (set via `lidt`).
+
+```c
+// IDT entry (simplified)
+struct idt_entry {
+    uint16_t offset_low;
+    uint16_t selector;     // code segment selector
+    uint8_t  ist;          // interrupt stack table index
+    uint8_t  type_attr;    // gate type + DPL + present
+    uint16_t offset_mid;
+    uint32_t offset_high;
+    uint32_t zero;
+} __attribute__((packed));
+```
+
+## What Happens on an Interrupt
+
+1. CPU finishes (or abandons) the current instruction
+2. Pushes `SS`, `RSP`, `RFLAGS`, `CS`, `RIP` (and error code for some exceptions) onto the kernel stack
+3. Looks up the IDT entry for the vector number
+4. Switches to ring 0, loads the handler's code segment and offset
+5. Handler runs, calls `iretq` to restore saved state and resume
+
+## The PIC and APIC
+
+On x86, hardware IRQs come through either the legacy 8259 PIC (two chips, 15 lines)
+or the modern APIC (Advanced Programmable Interrupt Controller). The APIC supports more IRQs,
+per-CPU local delivery, and inter-processor interrupts (IPIs) — essential for SMP.
+
+In MiniKernel I remapped the PIC IRQs to vectors 32–47 (above the reserved CPU exception range 0–31)
+and wrote handlers for the timer (IRQ0) and keyboard (IRQ1).
+
+## Timer Interrupts and Preemption
+
+The timer interrupt (IRQ0, typically 100–1000 Hz) is how the OS regains control from running processes.
+On each tick, the scheduler can decide to preempt the current process and switch to another.
+Without timer interrupts, a runaway process could starve everything else.
+
+## Open Questions
+
+- How does the x2APIC differ from the xAPIC in terms of programming interface?
+- What are Interrupt Stack Tables (IST) and when are they needed?
+- How does IRQ affinity work on SMP — binding interrupts to specific CPUs?

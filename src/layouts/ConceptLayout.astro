@@ -1,0 +1,136 @@
+---
+import Base from './Base.astro';
+
+interface Props {
+  frontmatter: {
+    title: string;
+    category: string;
+    tags: string[];
+    projects?: { title: string; slug: string }[];
+    related?: { title: string; slug: string }[];
+    resources?: { title: string; slug: string }[];
+    experiments?: { title: string; slug: string }[];
+  };
+}
+
+const { frontmatter: c } = Astro.props;
+---
+
+<Base title={c.title}>
+  <div class="container--narrow">
+    <div class="breadcrumb">
+      <a href="/">home</a>
+      <span>/</span>
+      <a href="/concepts">concepts</a>
+      <span>/</span>
+      <span style="color: var(--purple);">{c.title.toLowerCase()}</span>
+    </div>
+
+    <div class="page-header">
+      <div class="page-header__meta">
+        <span class="tag tag--concept">concept</span>
+        <span class="dot"></span>
+        <span class="meta-cat">{c.category}</span>
+      </div>
+      <h1>{c.title}</h1>
+      <div class="page-header__tags">
+        {c.tags.map(tag => <span class="tag">{tag}</span>)}
+      </div>
+    </div>
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    {c.projects && c.projects.length > 0 && (
+      <div class="related-section">
+        <p class="section-label">Projects Using This Concept</p>
+        <div class="related-grid">
+          {c.projects.map(p => (
+            <a href={`/projects/${p.slug}`} class="related-link">
+              <span class="tag tag--project" style="margin: 0; padding: 0.15em 0.4em; font-size: 0.6rem;">project</span>
+              {p.title}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {c.related && c.related.length > 0 && (
+      <div class="related-section" style="margin-top: 2rem; padding-top: 0; border: none;">
+        <p class="section-label">Related Concepts</p>
+        <div class="related-grid">
+          {c.related.map(r => (
+            <a href={`/concepts/${r.slug}`} class="related-link">
+              <span class="tag tag--concept" style="margin: 0; padding: 0.15em 0.4em; font-size: 0.6rem;">concept</span>
+              {r.title}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {c.resources && c.resources.length > 0 && (
+      <div class="related-section" style="margin-top: 2rem; padding-top: 0; border: none;">
+        <p class="section-label">Resources</p>
+        <div class="related-grid">
+          {c.resources.map(r => (
+            <a href={`/resources/${r.slug}`} class="related-link">
+              <span class="tag tag--resource" style="margin: 0; padding: 0.15em 0.4em; font-size: 0.6rem;">resource</span>
+              {r.title}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {c.experiments && c.experiments.length > 0 && (
+      <div class="related-section" style="margin-top: 2rem; padding-top: 0; border: none;">
+        <p class="section-label">Related Experiments</p>
+        <div class="related-grid">
+          {c.experiments.map(e => (
+            <a href={`/experiments/${e.slug}`} class="related-link">
+              <span class="tag tag--experiment" style="margin: 0; padding: 0.15em 0.4em; font-size: 0.6rem;">exp</span>
+              {e.title}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <div class="back-link">
+      <a href="/concepts">← back to concepts</a>
+    </div>
+  </div>
+</Base>
+
+<style>
+.breadcrumb {
+  padding: 2rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.breadcrumb a { color: var(--text-muted); }
+.breadcrumb a:hover { color: var(--text); }
+.meta-cat {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+.back-link {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.back-link a {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+.back-link a:hover { color: var(--text); }
+</style>

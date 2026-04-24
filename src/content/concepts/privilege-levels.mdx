@@ -1,0 +1,72 @@
+---
+title: Privilege Levels
+category: CPU & Execution
+tags: [ring0, ring3, protection, cpl, dpl, gdt]
+projects:
+  - { title: MiniKernel, slug: minikernel }
+related:
+  - { title: System Calls, slug: system-calls }
+  - {title: "Interrupts & IDT", slug: interrupts}
+  - { title: Virtual Memory, slug: virtual-memory }
+resources:
+  - { title: Intel SDM Vol. 3A, slug: intel-sdm }
+  - { title: OSDev Wiki, slug: osdev-wiki }
+---
+
+> The CPU enforces two worlds: kernel space and user space. Privilege levels are the hardware mechanism that makes this separation real — not just a software convention.
+
+## The Ring Model
+
+x86 defines four privilege rings (0–3), though Linux and most OSes use only two:
+
+- **Ring 0 (kernel mode)** — unrestricted access to all instructions, I/O ports, and control registers
+- **Ring 3 (user mode)** — restricted; cannot execute privileged instructions or directly access hardware
+
+The current privilege level (CPL) is stored in bits 0–1 of the `CS` register.
+
+## Why This Matters
+
+In ring 3, the CPU blocks instructions like `hlt`, `in`/`out` (I/O ports), `lgdt`/`lidt`,
+and writes to control registers (`CR0`, `CR3`). A buggy or malicious user program cannot
+directly corrupt the kernel's page tables or disable interrupts. The hardware enforces the boundary.
+
+## Crossing the Boundary
+
+User code can enter the kernel via:
+
+- **`syscall` / `sysenter`** — fast, dedicated instructions that atomically switch to ring 0
+- **Interrupts and exceptions** — the IDT handler runs in ring 0 regardless of CPL
+- **`int 0x80`** — legacy software interrupt (still supported, much slower)
+
+In each case, the CPU checks the Descriptor Privilege Level (DPL) of the target segment
+or gate to verify the transition is permitted.
+
+## The GDT and Segment Selectors
+
+The Global Descriptor Table (GDT) defines memory segments with their base, limit, and privilege level.
+A segment selector (loaded into CS, DS, etc.) encodes a GDT index plus an RPL (Requested Privilege Level).
+
+On x86-64 in long mode, segments are mostly vestigial — their base/limit fields are ignored,
+and flat addressing is used. But the GDT still matters for ring transitions and `syscall` setup.
+
+## Setting Up in MiniKernel
+
+MiniKernel sets up a minimal GDT with:
+
+- Null descriptor (required)
+- Kernel code segment (DPL 0)
+- Kernel data segment (DPL 0)
+- User code segment (DPL 3)
+- User data segment (DPL 3)
+- TSS descriptor (for ring 0 stack pointer on privilege change)
+
+```c
+// GDT entry flags for a 64-bit kernel code segment
+#define GDT_KERNEL_CODE  (GDT_PRESENT | GDT_DPL0 | GDT_CODE | GDT_LONG_MODE)
+```
+
+## Open Questions
+
+- How do hypervisors use ring 1/2, or do they just use VT-x instead?
+- What is SMEP (Supervisor Mode Execution Prevention) and how does it harden the boundary?
+- How does `seccomp` layer on top of privilege levels to further restrict syscalls?

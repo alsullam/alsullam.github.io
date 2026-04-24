@@ -1,0 +1,56 @@
+---
+title: ELF Parser
+chapter: 0
+desc: A parser and loader for ELF binaries. Reads section headers, program headers, and resolves symbol tables.
+status: active
+date: February 2025
+tags: [elf, linker, c, binary, symbols]
+github: https://github.com/ddumying/elf-parser
+concepts:
+  - { title: ELF Format, slug: elf-format }
+experiments:
+  - { title: ELF section stripping impact, slug: elf-stripping }
+---
+
+## Overview
+
+ELF Parser reads and interprets Executable and Linkable Format (ELF) binaries from scratch,
+without using `libelf` or any helper library. It parses the ELF header, program headers,
+section headers, and symbol table — and can load a simple static binary into memory and jump to its entry point.
+
+## What It Parses
+
+- **ELF header** — magic, class (32/64-bit), type, machine, entry point
+- **Program headers** — PT_LOAD segments, virtual addresses, file offsets, permissions
+- **Section headers** — .text, .data, .bss, .symtab, .strtab, .rodata
+- **Symbol table** — function names, addresses, sizes, binding/type info
+
+## Loading a Binary
+
+```c
+// Map PT_LOAD segments into memory at their virtual addresses
+for (int i = 0; i < ehdr.e_phnum; i++) {
+    Elf64_Phdr *ph = &phdrs[i];
+    if (ph->p_type != PT_LOAD) continue;
+
+    void *addr = mmap((void*)ph->p_vaddr, ph->p_memsz,
+                      prot_flags(ph->p_flags),
+                      MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
+    memcpy(addr, file_data + ph->p_offset, ph->p_filesz);
+}
+
+// Jump to entry point
+((void(*)())ehdr.e_entry)();
+```
+
+## Challenges
+
+The trickiest part was handling `.bss` — it exists in the section table but has no
+file data (it's zero-initialized at load time). The segment's `p_filesz` < `p_memsz`
+in that case, and you have to `memset` the difference to zero after copying.
+
+## What I Learned
+
+- Why ELF uses two different views (segment vs section) and when each matters
+- How dynamic linking differs from static — the PLT/GOT indirection model
+- How `objdump`, `readelf`, and `nm` work under the hood

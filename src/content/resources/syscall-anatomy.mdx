@@ -1,0 +1,33 @@
+---
+title: The Anatomy of a System Call
+author: LWN
+category: Articles & Papers
+tags: [syscalls, linux, x86, vdso, vsyscall]
+rating: 4
+link: https://lwn.net/Articles/604515/
+---
+
+## What It Is
+
+A two-part LWN article series that traces the complete path of a system call on x86-64 Linux —
+from the `syscall` instruction in user space all the way through the kernel's entry assembly,
+dispatch table, and back to userspace via `iretq` / `sysret`.
+
+## What It Covers
+
+- How the `LSTAR` MSR points to the kernel's syscall entry
+- What `entry_SYSCALL_64` does in assembly before reaching C code
+- How arguments are passed (rdi, rsi, rdx, r10, r8, r9) and why r10 differs from the C ABI
+- The `sys_call_table` dispatch mechanism
+- vsyscall vs. vDSO — why some syscalls don't need a trap at all
+
+## Why I Found It Useful
+
+Reading this article made the "syscall" abstraction concrete. I could finally trace the
+exact sequence of events from `write(1, "hi", 2)` in my code to `sys_write` in the kernel.
+Pairs perfectly with reading `arch/x86/entry/entry_64.S` in the kernel source.
+
+## Verdict
+
+Short, focused, and accurate. Read it after you understand what a syscall conceptually does;
+this fills in the x86-specific machinery.

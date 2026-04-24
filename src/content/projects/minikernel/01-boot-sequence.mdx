@@ -1,0 +1,117 @@
+---
+title: "Boot Sequence & Protected Mode"
+chapter: 1
+---
+
+## From Power-On to Your Code
+
+When you hit the power button, here's what actually happens before a single line
+of your kernel runs:
+
+1. **CPU resets** to real mode — 16-bit, 1MB addressable, no paging, no protection
+2. **BIOS/UEFI** runs from ROM, initializes hardware, locates boot device
+3. **GRUB** loads from the MBR/EFI partition, reads its config, loads your kernel ELF
+4. **Multiboot handoff** — GRUB jumps to your `_start` with `eax = 0x2BADB002` (magic) and `ebx` pointing to the multiboot info struct
+5. **Your code runs** — still in 32-bit protected mode, paging disabled, interrupts disabled
+
+## The Multiboot Header
+
+GRUB needs to find your kernel. You embed a magic header in the binary:
+
+```asm
+; boot.asm
+section .multiboot
+align 4
+    dd 0x1BADB002          ; magic
+    dd 0x00000003          ; flags: align modules, provide memory map
+    dd -(0x1BADB002 + 3)   ; checksum: magic + flags + checksum = 0
+```
+
+GRUB scans the first 8KB of the ELF for this signature. If it matches and the
+checksum is valid, GRUB treats the file as a multiboot kernel.
+
+## Setting Up the Stack
+
+GRUB doesn't give you a stack. Your very first job is establishing one:
+
+```asm
+section .bss
+align 16
+stack_bottom:
+    resb 16384          ; 16KB initial stack
+stack_top:
+
+section .text
+global _start
+_start:
+    mov esp, stack_top  ; point stack register to top (stacks grow down)
+    push ebx            ; save multiboot info pointer before we clobber registers
+    call kmain
+    cli
+    hlt                 ; should never reach here
+```
+
+## Entering 32-bit Protected Mode
+
+GRUB actually puts you in protected mode already — you don't need to do the
+real-mode → protected-mode transition manually (that was the old days with raw BIOS boots).
+
+But you do need to set up your own **GDT** (Global Descriptor Table) immediately,
+because GRUB's GDT is temporary and you can't trust its segment descriptors.
+
+```c
+// kmain.c — first C code that runs
+void kmain(uint32_t multiboot_magic, multiboot_info_t *mbi) {
+    gdt_init();     // set up our own GDT and reload segment registers
+    idt_init();     // set up interrupt descriptor table
+    pic_init();     // remap PIC IRQs above CPU exceptions (32+)
+    mem_init(mbi);  // parse multiboot memory map
+    paging_init();  // enable virtual memory
+    scheduler_init();
+    // ... never returns
+}
+```
+
+## The GDT
+
+The GDT defines memory segments. In 64-bit long mode, segments are mostly flat
+(base 0, limit max), but we still need them for privilege level separation.
+Minimum viable GDT for a 32-bit kernel:
+
+```c
+struct gdt_entry {
+    uint16_t limit_low;
+    uint16_t base_low;
+    uint8_t  base_mid;
+    uint8_t  access;     // present, DPL, type
+    uint8_t  granularity; // limit_high + flags
+    uint8_t  base_high;
+} __attribute__((packed));
+
+// Index 0: null (required by x86)
+// Index 1: kernel code — DPL 0, executable, readable
+// Index 2: kernel data — DPL 0, writable
+// Index 3: user code  — DPL 3, executable, readable
+// Index 4: user data  — DPL 3, writable
+```
+
+After filling the table, load it with `lgdt` and reload segment registers:
+
+```asm
+lgdt [gdt_descriptor]
+; Reload CS via far jump — only way to update code segment
+jmp 0x08:.reload_cs
+.reload_cs:
+    mov ax, 0x10    ; kernel data segment selector
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+```
+
+## What Comes Next
+
+With a valid GDT and stack established, we can set up the IDT to handle interrupts
+and exceptions — without that, any fault (divide by zero, bad memory access) will
+triple-fault and silently reset the machine.

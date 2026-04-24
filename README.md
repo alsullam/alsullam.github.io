@@ -1,2 +1,0 @@
-# alsullam.github.io
-Website

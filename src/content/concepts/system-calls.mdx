@@ -1,0 +1,67 @@
+---
+title: System Calls
+category: Formats & ABIs
+tags: [syscall, linux, abi, x86-64, trap]
+projects:
+  - { title: SyscallTrace, slug: syscalltrace }
+  - { title: TinyShell, slug: tinyshell }
+related:
+  - { title: Privilege Levels, slug: privilege-levels }
+  - { title: Process Management, slug: process-management }
+resources:
+  - { title: The Anatomy of a System Call, slug: syscall-anatomy }
+  - { title: The Linux Programming Interface, slug: tlpi }
+---
+
+> A system call is the controlled gateway between user code and kernel code. It's the only legitimate way a process can ask the OS to do something privileged.
+
+## What Is a System Call?
+
+System calls are the interface between user programs and the kernel. When your program
+calls `read()`, `write()`, `fork()`, or `mmap()`, it's ultimately issuing a system call —
+a request to the kernel to perform a privileged operation on its behalf.
+
+## The Mechanism on x86-64
+
+On modern x86-64 Linux, system calls use the `syscall` instruction:
+
+```asm
+; Example: write(1, "hi\n", 3)
+mov rax, 1      ; syscall number (SYS_write)
+mov rdi, 1      ; fd = stdout
+mov rsi, msg    ; pointer to buffer
+mov rdx, 3      ; length
+syscall         ; trap to kernel
+; rax = return value (bytes written, or -errno)
+```
+
+The `syscall` instruction switches the CPU to ring 0, saves user state (RIP, RFLAGS, RSP),
+and jumps to the kernel's syscall entry point (stored in the `LSTAR` MSR).
+
+## The Linux ABI
+
+The x86-64 Linux ABI specifies:
+
+- **Syscall number** in `rax`
+- **Arguments** in `rdi`, `rsi`, `rdx`, `r10`, `r8`, `r9` (in order)
+- **Return value** in `rax` (negative errno on error)
+
+The `syscall` instruction itself clobbers `rcx` and `r11` (used internally for RIP and RFLAGS).
+
+## What the Kernel Does
+
+On entry to the kernel's syscall handler, it validates the syscall number,
+looks up the handler in `sys_call_table[]`, and dispatches to it.
+The handler runs in kernel context with full privileges.
+
+## The Cost
+
+A bare syscall round-trip costs roughly 100–300 ns on modern hardware —
+much more than a function call. This is why vDSO exists: for read-only operations
+like `gettimeofday()`, Linux maps kernel data directly into user space to
+avoid the trap entirely.
+
+## Open Questions
+
+- How does `seccomp` filter syscalls, and what's its overhead?
+- What changed in the syscall path after Spectre/Meltdown (KPTI)?

@@ -1,0 +1,75 @@
+---
+title: CPU Scheduling
+category: CPU & Execution
+tags: [scheduling, context-switch, preemption, pcb, runqueue]
+projects:
+  - { title: MiniKernel, slug: minikernel }
+related:
+  - { title: Process Management, slug: process-management }
+  - {title: "Interrupts & IDT", slug: interrupts}
+  - { title: Virtual Memory, slug: virtual-memory }
+resources:
+  - {title: "Operating Systems: Three Easy Pieces", slug: ostep}
+experiments:
+  - { title: Context switch overhead, slug: ctx-switch-overhead }
+---
+
+> A scheduler's job is deceptively simple: decide which process runs next. The hard part is doing it with fairness, low latency, and high throughput — simultaneously.
+
+## The Problem
+
+A modern system runs many processes but has limited CPU cores. The scheduler creates the
+illusion of concurrency by rapidly switching between processes — fast enough that each
+feels like it has the CPU to itself.
+
+## Process States
+
+Every process exists in one of a small number of states:
+
+- **Running** — currently executing on a CPU core
+- **Ready** — runnable, waiting for the scheduler to pick it
+- **Blocked** — waiting for I/O, a lock, or a timer — cannot run
+- **Zombie** — exited but not yet waited on by its parent
+
+Transitions between states are triggered by syscalls, hardware interrupts, and the scheduler itself.
+
+## Context Switching
+
+A context switch is the mechanism by which the CPU moves from running one process to another.
+It involves saving the current process's registers (and FPU/SIMD state) into its PCB,
+loading the next process's saved state, and switching page tables (CR3 on x86).
+
+```c
+// Simplified context switch (assembly in real kernels)
+void switch_to(struct task *prev, struct task *next) {
+    save_registers(&prev->context);
+    load_cr3(next->mm->pgd); // switch address space
+    restore_registers(&next->context);
+}
+```
+
+Context switches are expensive: TLB flushes, cache cold-start, pipeline stalls.
+Linux uses PCID to reduce TLB overhead across switches.
+
+## Scheduling Algorithms
+
+**Round Robin** — each process gets a fixed time quantum. Simple, fair, but ignores priority.
+
+**CFS (Completely Fair Scheduler)** — Linux's default. Tracks virtual runtime per process
+in a red-black tree. Always picks the process with the smallest `vruntime` to run next.
+Higher-priority processes accumulate vruntime more slowly.
+
+**Real-time schedulers** — `SCHED_FIFO` and `SCHED_RR` for hard real-time tasks.
+Priority preempts everything.
+
+## The Scheduler in MiniKernel
+
+My kernel uses simple round-robin over a static process table.
+On each timer interrupt, the current process is moved to the tail of the run queue
+and the head is dispatched. No priorities, no sleep/wake — just cooperative time-sharing.
+
+## Open Questions
+
+- How does CFS handle processes that sleep frequently (interactive vs. batch)?
+- What's the overhead of `SCHED_DEADLINE` compared to CFS?
+- How do NUMA-aware schedulers minimize cross-socket memory access?

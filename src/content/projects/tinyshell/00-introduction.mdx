@@ -1,0 +1,54 @@
+---
+title: TinyShell
+chapter: 0
+desc: A minimal POSIX shell with job control, pipes, redirections, and background process management.
+status: active
+date: March 2025
+tags: [shell, posix, c, processes, pipes]
+concepts:
+  - { title: Process Management, slug: process-management }
+  - { title: System Calls, slug: system-calls }
+---
+
+## Overview
+
+TinyShell is a minimal but real POSIX shell written in C. It supports the core features
+you'd expect from bash — command execution, pipes, I/O redirection, background jobs,
+and basic job control — implemented from scratch using `fork`, `exec`, `pipe`, and `waitpid`.
+
+## Features
+
+- **Pipelines** — `cmd1 | cmd2 | cmd3` with correct fd wiring
+- **Redirection** — `>`, `<`, `>>`, `2>` using `dup2`
+- **Background jobs** — `&` suffix, `jobs` builtin, `fg`/`bg` control
+- **Builtins** — `cd`, `exit`, `echo`, `jobs`, `fg`, `bg`
+- **Signal handling** — `SIGCHLD` for zombie reaping, `SIGINT`/`SIGTSTP` forwarding
+
+## The Pipeline Challenge
+
+The trickiest part is wiring pipes correctly in a multi-stage pipeline.
+Each process needs the read end of the previous pipe and the write end of the next.
+Getting the `close()` calls right to avoid deadlocks took several iterations.
+
+```c
+// For n commands, create n-1 pipes
+int pipes[n-1][2];
+for (int i = 0; i < n-1; i++) pipe(pipes[i]);
+
+for (int i = 0; i < n; i++) {
+    pid_t pid = fork();
+    if (pid == 0) {
+        if (i > 0)   dup2(pipes[i-1][0], STDIN_FILENO);
+        if (i < n-1) dup2(pipes[i][1],   STDOUT_FILENO);
+        // close all pipe fds before exec
+        execvp(cmds[i].argv[0], cmds[i].argv);
+    }
+}
+```
+
+## What I Learned
+
+- How a shell is fundamentally just a `fork`/`exec`/`wait` loop
+- Why `SIGCHLD` handling is necessary to avoid zombie processes
+- The subtlety of process groups and sessions for proper job control
+- How `dup2` replaces file descriptors to wire up pipes invisibly to child programs

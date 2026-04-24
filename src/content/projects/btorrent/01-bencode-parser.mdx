@@ -1,0 +1,115 @@
+---
+title: "The Bencode Parser"
+chapter: 1
+---
+
+## What Is Bencode?
+
+Before we can talk to any tracker or peer, we need to parse `.torrent` files.
+They're encoded in **bencode** — a simple serialization format invented for BitTorrent.
+
+The full spec fits in four rules:
+
+| Type    | Format              | Example            |
+|---------|--------------------|--------------------|
+| Integer | `i<n>e`            | `i42e` → 42        |
+| String  | `<len>:<data>`     | `4:spam` → "spam"  |
+| List    | `l<items>e`        | `l4:spami1ee`      |
+| Dict    | `d<key><val>...e`  | `d3:key5:valuee`   |
+
+Strings come first as length-prefixed, which makes the format self-delimiting —
+no need for escaping or schema definitions. Everything is unambiguous to parse.
+
+## Parser Architecture
+
+I wrote a recursive descent parser. The entry point peeks at the first byte to dispatch:
+
+```c
+typedef enum { BENC_INT, BENC_STR, BENC_LIST, BENC_DICT } BencType;
+
+typedef struct BencNode {
+    BencType type;
+    union {
+        int64_t   integer;
+        struct { char *data; size_t len; } string;
+        struct { struct BencNode **items; size_t count; } list;
+        struct { struct BencKV  *pairs;  size_t count; } dict;
+    };
+} BencNode;
+
+BencNode *benc_parse(const char *buf, size_t len, size_t *consumed);
+```
+
+## Parsing Integers
+
+```c
+static BencNode *parse_int(const char *buf, size_t len, size_t *pos) {
+    // format: i<digits>e
+    assert(buf[*pos] == 'i');
+    (*pos)++;  // skip 'i'
+
+    int64_t val = 0;
+    int neg = 0;
+    if (buf[*pos] == '-') { neg = 1; (*pos)++; }
+
+    while (buf[*pos] != 'e') {
+        val = val * 10 + (buf[(*pos)++] - '0');
+    }
+    (*pos)++;  // skip 'e'
+
+    BencNode *n = node_new(BENC_INT);
+    n->integer = neg ? -val : val;
+    return n;
+}
+```
+
+## Parsing Strings
+
+```c
+static BencNode *parse_str(const char *buf, size_t len, size_t *pos) {
+    // format: <length>:<data>
+    size_t slen = 0;
+    while (buf[*pos] != ':') {
+        slen = slen * 10 + (buf[(*pos)++] - '0');
+    }
+    (*pos)++;  // skip ':'
+
+    BencNode *n = node_new(BENC_STR);
+    n->string.data = strndup(buf + *pos, slen);
+    n->string.len  = slen;
+    *pos += slen;
+    return n;
+}
+```
+
+## Reading a .torrent File
+
+A `.torrent` is a bencoded dict at the top level. Key fields:
+
+- `info` → nested dict with `name`, `piece length`, `pieces` (concatenated SHA-1 hashes), `length` or `files`
+- `announce` → tracker URL string
+- `announce-list` → list of tracker URL lists (for multi-tracker)
+
+```c
+BencNode *torrent = benc_parse(file_data, file_size, &consumed);
+assert(torrent->type == BENC_DICT);
+
+// Extract tracker URL
+BencNode *announce = dict_get(torrent, "announce");
+printf("Tracker: %s\n", announce->string.data);
+
+// Extract piece count
+BencNode *info   = dict_get(torrent, "info");
+BencNode *pieces = dict_get(info, "pieces");
+size_t piece_count = pieces->string.len / 20;  // 20 bytes per SHA-1
+printf("Pieces: %zu\n", piece_count);
+```
+
+## What Comes Next
+
+With the torrent parsed we have everything needed to:
+1. Compute the **info hash** (SHA-1 of the raw bencoded `info` dict) — used in every tracker request and peer handshake
+2. Build the list of expected piece hashes for verification
+3. Know the total file size and piece sizes for disk layout
+
+Next chapter: contacting the tracker.

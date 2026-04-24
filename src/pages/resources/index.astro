@@ -1,0 +1,149 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const resources = [
+  {
+    category: 'Books',
+    items: [
+      {
+        title: 'Computer Systems: A Programmer\'s Perspective',
+        slug: 'csapp',
+        author: 'Bryant & O\'Hallaron',
+        desc: 'The definitive book for understanding systems from bits to processes. Chapters on memory, linking, and I/O are essential.',
+        tags: ['memory', 'os', 'assembly', 'networking'],
+        rating: 5,
+      },
+      {
+        title: 'Operating Systems: Three Easy Pieces',
+        slug: 'ostep',
+        author: 'Arpaci-Dusseau',
+        desc: 'Free online textbook covering virtualization, concurrency, and persistence. Extremely clear writing.',
+        tags: ['os', 'scheduling', 'filesystem', 'concurrency'],
+        rating: 5,
+        link: 'https://pages.cs.wisc.edu/~remzi/OSTEP/',
+      },
+      {
+        title: 'The Linux Programming Interface',
+        slug: 'tlpi',
+        author: 'Michael Kerrisk',
+        desc: 'Comprehensive guide to Linux syscalls, processes, files, sockets, and everything in between.',
+        tags: ['linux', 'syscalls', 'posix'],
+        rating: 5,
+      },
+    ]
+  },
+  {
+    category: 'References',
+    items: [
+      {
+        title: 'Intel Software Developer Manual',
+        slug: 'intel-sdm',
+        author: 'Intel',
+        desc: 'The authoritative source on x86 architecture. Vol. 3A covers protected mode and paging in detail.',
+        tags: ['x86', 'cpu', 'paging', 'interrupts'],
+        rating: 4,
+        link: 'https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html',
+      },
+      {
+        title: 'OSDev Wiki',
+        slug: 'osdev-wiki',
+        author: 'Community',
+        desc: 'Invaluable community knowledge base for bare-metal development. Start here for boot, GDT, and IDT.',
+        tags: ['os', 'x86', 'boot', 'kernel'],
+        rating: 4,
+        link: 'https://wiki.osdev.org/',
+      },
+    ]
+  },
+  {
+    category: 'Articles & Papers',
+    items: [
+      {
+        title: 'What Every Programmer Should Know About Memory',
+        slug: 'ulrich-memory',
+        author: 'Ulrich Drepper',
+        desc: 'Long-form paper on CPU caches, memory hierarchy, and NUMA. Changes how you write code forever.',
+        tags: ['memory', 'cache', 'performance'],
+        rating: 5,
+        link: 'https://people.freebsd.org/~lstewart/articles/cpumemory.pdf',
+      },
+      {
+        title: 'The Anatomy of a System Call',
+        slug: 'syscall-anatomy',
+        author: 'LWN',
+        desc: 'Deep dive into how the Linux kernel implements system calls on x86-64.',
+        tags: ['syscalls', 'linux', 'x86'],
+        rating: 4,
+      },
+    ]
+  },
+  {
+    category: 'Tools',
+    items: [
+      {
+        title: 'GDB + pwndbg',
+        slug: 'gdb-pwndbg',
+        author: 'Open Source',
+        desc: 'GDB is essential for kernel debugging. pwndbg extends it with better memory visualization and heap analysis.',
+        tags: ['debugging', 'gdb', 'tools'],
+        rating: 5,
+      },
+      {
+        title: 'QEMU',
+        slug: 'qemu',
+        author: 'Open Source',
+        desc: 'Full-system emulator. Used to boot and test MiniKernel. Use -s -S for GDB remote debugging.',
+        tags: ['emulation', 'tools', 'kernel'],
+        rating: 5,
+        link: 'https://www.qemu.org/',
+      },
+    ]
+  },
+];
+---
+
+<Base title="Resources">
+  <div class="container">
+    <div class="page-header">
+      <p class="section-label">03 — Resources</p>
+      <h1>Resources</h1>
+      <p style="max-width: 50ch; margin-top: 0.75rem; color: var(--text-muted);">
+        Books, papers, references, and tools that shaped this lab. 
+        Curated, not comprehensive.
+      </p>
+    </div>
+
+    {resources.map(cat => (
+      <div style="margin-bottom: 4rem;">
+        <div class="labeled-divider" style="margin-top: 0;">
+          <span>{cat.category}</span>
+        </div>
+        <ul class="index-list">
+          {cat.items.map((item, i) => (
+            <li class="index-item">
+              <span class="index-item__num">{String(i+1).padStart(2, '0')}</span>
+              <div class="index-item__content">
+                <a 
+                  href={item.link || `/resources/${item.slug}`} 
+                  class="index-item__title"
+                  target={item.link ? '_blank' : undefined}
+                  rel={item.link ? 'noopener' : undefined}
+                >
+                  {item.title}
+                  {item.link && <span style="font-size: 0.65rem; color: var(--text-muted); margin-left: 0.4rem; font-family: var(--font-mono);">↗</span>}
+                </a>
+                <div class="index-item__meta">
+                  <span class="tag tag--resource">resource</span>
+                  <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted);">{item.author}</span>
+                  <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--border-hover);">{'★'.repeat(item.rating)}</span>
+                  {item.tags.slice(0, 3).map(tag => <span class="tag">{tag}</span>)}
+                </div>
+                <p class="index-item__desc">{item.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</Base>

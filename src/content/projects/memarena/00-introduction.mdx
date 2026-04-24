@@ -1,0 +1,62 @@
+---
+title: MemArena
+chapter: 0
+desc: Custom arena allocator implementing region-based memory management, with bump allocation and linear free lists.
+status: wip
+date: January 2025
+tags: [memory, c, allocator, arena]
+github: https://github.com/ddumying/memarena
+concepts:
+  - { title: Memory Allocators, slug: memory-allocators }
+  - { title: Virtual Memory, slug: virtual-memory }
+experiments:
+  - { title: Heap allocator fragmentation study, slug: allocator-fragmentation }
+---
+
+## Overview
+
+MemArena is a hand-written arena allocator in C. The goal was to understand the trade-offs
+between general-purpose allocators (`malloc`) and region-based allocation used in compilers,
+parsers, and game engines — where entire regions of memory are freed at once.
+
+## Design
+
+The allocator is built around three primitives:
+
+- **Arena** — a backing slab of memory (mmap'd or stack-allocated)
+- **Bump pointer** — a monotonically advancing offset into the arena
+- **Scratch arenas** — nested arenas for temporary allocations that are reset cheaply
+
+```c
+typedef struct {
+    uint8_t *base;
+    size_t   offset;
+    size_t   capacity;
+} Arena;
+
+void *arena_alloc(Arena *a, size_t size) {
+    size = ALIGN_UP(size, 16);
+    if (a->offset + size > a->capacity) return NULL;
+    void *ptr = a->base + a->offset;
+    a->offset += size;
+    return ptr;
+}
+```
+
+## Why Not `malloc`?
+
+General-purpose allocators carry overhead: header metadata per block, free lists,
+coalescing, fragmentation tracking. For short-lived allocations with a known lifetime,
+a bump allocator is dramatically simpler and often 10–20x faster.
+
+## Current Status
+
+Bump allocation and scratch arenas are working. I'm currently implementing a
+"mark/reset" interface for sub-arena checkpoints — useful for backtracking parsers.
+A linked-chunk version (for unbounded growth) is next.
+
+## What I Learned
+
+- How alignment requirements interact with raw pointer arithmetic in C
+- Why `mmap(MAP_ANONYMOUS)` is often better than `sbrk` for large arenas
+- The performance implications of cache locality in bump vs. linked-list allocation

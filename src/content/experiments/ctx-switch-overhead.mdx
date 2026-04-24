@@ -1,0 +1,65 @@
+---
+title: Context switch overhead
+outcome: success
+date: January 2025
+tags: [scheduling, performance, linux, pipes]
+concepts:
+  - { title: CPU Scheduling, slug: cpu-scheduling }
+  - { title: Process Management, slug: process-management }
+---
+
+## Hypothesis
+
+A voluntary context switch between two processes should cost somewhere between 1–10 µs.
+I also wanted to compare process context switches vs. thread context switches.
+
+## Method
+
+The classic technique: two processes communicate over a pipe.
+Each `write`/`read` pair forces a context switch — the writing process blocks waiting
+for the reader to consume, and vice versa. Timing the round trip gives 2× the switch cost.
+
+```c
+// Process A
+for (int i = 0; i < ITERS; i++) {
+    write(pipe_ab[1], &byte, 1);
+    read(pipe_ba[0], &byte, 1);
+}
+
+// Process B
+for (int i = 0; i < ITERS; i++) {
+    read(pipe_ab[0], &byte, 1);
+    write(pipe_ba[1], &byte, 1);
+}
+```
+
+Round-trip time / 2 = one context switch.
+
+## Results
+
+Measured over 100,000 iterations, Linux 6.6, Intel i7-11th gen:
+
+| Type              | Mean round-trip | Per switch |
+|-------------------|----------------|------------|
+| Process (fork)    | 4,820 ns       | ~2,410 ns  |
+| Thread (pthread)  | 2,140 ns       | ~1,070 ns  |
+
+Thread switches are roughly 2× faster — no CR3 reload (same address space), smaller TLB impact.
+
+## Observations
+
+- Results are surprisingly stable across runs (< 5% variance with CPU pinned)
+- Unpinned from a CPU core, variance jumped to 15–30% — scheduler migration overhead
+- `SCHED_FIFO` (real-time) reduced latency by ~20% vs default `SCHED_OTHER`
+- The pipe buffer size doesn't matter — we're only moving 1 byte, not saturating throughput
+
+## What I Got Wrong
+
+My first attempt measured wall-clock time with `gettimeofday` — too coarse at 1 µs resolution.
+Switching to `clock_gettime(CLOCK_MONOTONIC_RAW)` with nanosecond precision gave stable results.
+
+## Follow-up Questions
+
+- How does pinning both processes to the same NUMA node vs. different nodes affect latency?
+- What's the overhead of a context switch when FPU/AVX state must be saved?
+- How does `io_uring` avoid context switches for high-frequency I/O patterns?

@@ -1,0 +1,66 @@
+---
+title: ELF section stripping impact
+outcome: success
+date: March 2025
+tags: [elf, binary, size, strip, debug]
+concepts:
+  - { title: ELF Format, slug: elf-format }
+projects:
+  - { title: ELF Parser, slug: elf-parser }
+---
+
+## Question
+
+What actually happens when you `strip` an ELF binary? Does it affect runtime behavior,
+or just binary size? And how much size can you recover?
+
+## Method
+
+I compiled a small C program with debug info (`-g`) and measured the binary at each stage:
+
+1. Debug build (unstripped, `-g -O0`)
+2. Release build (`-O2`, no `-g`)
+3. `strip --strip-debug` (remove debug sections only)
+4. `strip --strip-all` (remove all non-essential sections)
+5. Manual removal of `.comment`, `.note.*` with `objcopy --remove-section`
+
+## Results
+
+| Stage                  | Size     | Δ       |
+|------------------------|---------|---------|
+| Debug build            | 847 KB  | —       |
+| Release (`-O2`)        | 312 KB  | −63%    |
+| `strip --strip-debug`  | 189 KB  | −39%    |
+| `strip --strip-all`    | 14.2 KB | −92%    |
+| + remove `.comment` etc| 13.8 KB | −3%     |
+
+## What Gets Removed
+
+`strip --strip-all` removes:
+- `.symtab` — static symbol table (function/variable names)
+- `.strtab` — string table for symbols
+- `.debug_*` — DWARF debug info (line numbers, type info, variable locations)
+- `.comment` — compiler version string
+- `.note.gnu.build-id` — build ID (optional)
+
+**Not removed:** `.dynsym` and `.dynstr` — these are needed at runtime for dynamic linking.
+A fully static binary can lose these too; a dynamic binary cannot.
+
+## Runtime Impact
+
+Zero. Stripping only removes sections that the **loader doesn't use**.
+The PT_LOAD segments (code and data) are untouched. The program runs identically.
+
+The one real consequence: stripped binaries produce useless stack traces and crash dumps.
+GDB can't resolve symbols. That's why production systems keep a debug symbol package separate.
+
+## Surprise Finding
+
+`.rodata` (string literals) accounts for a surprisingly large fraction of the stripped binary —
+nearly 40% in my test program, which had a lot of error message strings. Dead-stripping
+unused strings (requires compiler + linker cooperation, `-fdata-sections -Wl,--gc-sections`) recovered another 8%.
+
+## Follow-up Questions
+
+- How does `debuglink` work — embedding a pointer to a separate `.debug` file?
+- What does `eu-strip` do differently from GNU `strip`?

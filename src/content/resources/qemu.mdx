@@ -1,0 +1,59 @@
+---
+title: QEMU
+author: Open Source
+category: Tools
+tags: [emulation, tools, kernel, virtualization, debugging]
+rating: 5
+link: https://www.qemu.org/
+---
+
+## What It Is
+
+QEMU (Quick Emulator) is a full-system emulator that can run a complete x86-64 machine —
+CPU, RAM, disk, network, serial port — entirely in software. It's the standard tool
+for developing and testing OS kernels without requiring real hardware.
+
+## Why It's Essential for Kernel Work
+
+You can't easily attach a debugger to real hardware during boot. With QEMU:
+
+- Boot your kernel in a VM with one command
+- Attach GDB via the built-in GDB stub (`-s -S`)
+- Step through your kernel's assembly from the very first instruction
+- Iterate in seconds instead of minutes (no physical reboot)
+
+## Key Flags for Kernel Development
+
+```sh
+qemu-system-x86_64 \
+  -kernel build/kernel.bin \   # direct kernel loading (no bootable image needed)
+  -m 128M \                    # 128MB RAM
+  -nographic \                 # use terminal instead of window
+  -serial mon:stdio \          # serial output to terminal
+  -s \                         # GDB server on :1234
+  -S \                         # pause at startup (wait for GDB)
+  -no-reboot                   # halt instead of reboot on triple fault
+```
+
+## Direct Kernel Boot
+
+For early kernel development, QEMU's `-kernel` flag loads an ELF or bzImage directly
+without needing a bootloader. QEMU acts as the multiboot bootloader, jumping straight
+to your kernel entry point. This accelerates the iteration loop enormously.
+
+## Debugging Triple Faults
+
+`-no-reboot` is crucial. Without it, a triple fault (IDT not set up, stack not valid, etc.)
+causes QEMU to silently reset — you see nothing. With `-no-reboot`, QEMU halts and GDB
+can inspect the CPU state at the moment of failure.
+
+## Tips
+
+- Use `-d int` to log every CPU exception/interrupt to stderr — invaluable for IDT debugging
+- Use `-M q35` for a more modern machine model (PCIe, AHCI) vs the default i440FX
+- `Ctrl-a x` exits QEMU in `-nographic` mode
+
+## Verdict
+
+Indispensable. Every kernel experiment in this lab runs on QEMU. The GDB integration alone
+makes it worth learning thoroughly.

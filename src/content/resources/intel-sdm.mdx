@@ -1,0 +1,36 @@
+---
+title: Intel Software Developer Manual
+author: Intel
+category: References
+tags: [x86, cpu, paging, interrupts, protected-mode]
+rating: 4
+link: https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html
+---
+
+## What It Is
+
+The authoritative reference for the x86 and x86-64 instruction set architecture.
+Three thick volumes covering everything from instruction encoding to protected mode, paging, memory types, power management, and virtualization extensions.
+
+## Which Volumes Matter
+
+- **Vol. 1** — basic architecture, data types, registers. Useful for orientation.
+- **Vol. 2** — full instruction reference. Use as a lookup table, not for reading.
+- **Vol. 3A** — system programming: protected mode, segmentation, paging, task management, IDT, interrupts. **This is the one you actually need.**
+- **Vol. 3B/C** — more system programming: APIC, VMX, power management.
+
+## How I Use It
+
+Primarily for Vol. 3A when implementing MiniKernel. The paging chapter (Chapter 4) is the ground truth
+for x86-64 4-level paging — page table formats, CR3 structure, TLB invalidation rules.
+The interrupt chapter (Chapter 6) is essential for setting up the IDT correctly.
+
+## Caveats
+
+- Massive and dense. Don't try to read it sequentially.
+- Some sections assume familiarity with older x86 modes you'll never use (real mode, v8086)
+- Updated frequently — download the latest version; errata matter
+
+## Verdict
+
+You can't write a kernel without it. Bookmark Vol. 3A Chapter 4 (paging) and Chapter 6 (interrupts) first.
