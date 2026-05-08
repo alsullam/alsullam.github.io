@@ -1,0 +1,124 @@
+---
+title: DGEngine
+chapter: 0
+desc: A minimal Linux game engine built from scratch in C using SDL2 and OpenGL. Focused on understanding rendering, engine architecture, and low-level game systems.
+status: wip
+date: May 2026
+tags: [gamedev, graphics, opengl, sdl2, c, engine-dev, linux]
+github: https://github.com/ddumbying/DGEngine
+concepts:
+  - { title: Rendering Pipelines, slug: rendering-pipelines }
+  - { title: OpenGL, slug: opengl }
+  - { title: Game Loops, slug: game-loops }
+  - { title: Memory Management, slug: memory-management }
+  - { title: Engine Architecture, slug: engine-architecture }
+---
+
+## Overview
+
+DGEngine (Dumbest-Game-Engine) is a small game engine written from scratch in C.
+
+The project is intentionally minimal and educational. The goal is not to create a production-ready engine, but to understand how game engines actually work internally: rendering pipelines, OpenGL contexts, resource management, timing systems, entity handling, and low-level architecture decisions.
+
+The engine uses SDL2 as the platform layer and OpenGL as the rendering backend.
+
+## Current Goals
+
+The current focus is building a clean and understandable foundation:
+
+1. Create a window and OpenGL context
+2. Build a basic rendering pipeline
+3. Render textured quads and sprites
+4. Handle keyboard and mouse input
+5. Implement timing and delta time
+6. Create a minimal entity system
+7. Build a small playable game using the engine
+
+The project intentionally avoids large abstractions and overengineering.
+
+## Current Stack
+
+### Language
+
+- C11
+
+### Libraries
+
+- SDL2 — windowing, input, audio, timing
+- OpenGL 3.3 Core — rendering
+- GLAD — OpenGL function loading
+- stb_image — texture loading
+
+## Current Architecture
+
+```text
+src/
+├── core/
+├── platform/
+├── renderer/
+├── math/
+└── game/
+```
+
+**The engine is currently separated into small isolated systems**:
+
+`core/` → engine runtime, logging, timing
+`platform/` → SDL window/input handling
+`renderer/` → OpenGL renderer and shaders
+`math/` → vectors and matrices
+`game/` → gameplay-specific logic
+
+## Rendering Pipeline (Current Direction)
+
+The renderer is being built directly on top of modern OpenGL.
+
+The current rendering flow is planned as:
+
+```
+Vertex Data
+    ↓
+Vertex Buffers
+    ↓
+Vertex Shader
+    ↓
+Rasterization
+    ↓
+Fragment Shader
+    ↓
+Framebuffer
+```
+The goal is to understand how GPUs actually process geometry and pixels rather than hiding everything behind high-level abstractions.
+
+## What I'm Working On
+
+- Rendering the first triangle
+- Vertex buffers and VAOs
+- Shader compilation system
+- Texture loading with stb_image
+- 2D camera system
+- Basic sprite rendering
+- Delta time and frame timing
+- Simple collision handling
+
+## Planned Features
+
+- Sprite batching
+- Tilemaps
+- Basic ECS-like entity handling
+- Resource manager
+- Asset loading system
+- Simple scene management
+
+## No plans currently for:
+
+- advanced physics
+- networking
+- scripting languages
+- visual editors
+- AAA rendering systems
+- What I've Learned So Far
+- OpenGL is mostly state management and GPU communication
+- SDL2 handles the platform layer, not rendering itself
+- Modern OpenGL requires explicit buffer/shader management
+- Building a renderer involves much more architecture than graphics alone
+- Even a minimal engine quickly becomes a systems programming project
