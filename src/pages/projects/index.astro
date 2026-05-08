@@ -2,11 +2,26 @@
 import Base from '../../layouts/Base.astro';
 
 const projects = [
+    {
+      title: 'DGEngine',
+      slug: 'dgengine',
+      desc: 'A minimal Linux game engine built from scratch in C using SDL2 and OpenGL. Focused on rendering, engine architecture, and low-level game systems.',
+      status: 'wip',
+      tags: ['gamedev', 'graphics', 'opengl', 'sdl2', 'c', 'engine-dev', 'linux'],
+      concepts: [
+        'rendering-pipelines',
+        'opengl',
+        'game-loops',
+        'memory-management',
+        'engine-architecture'
+      ],
+      date: '2026-05',
+    },
   {
     title: 'BTorrent',
     slug: 'btorrent',
     desc: 'A BitTorrent client built from scratch in C. Implements peer discovery, piece selection, and parallel downloading over raw TCP.',
-    status: 'wip',
+    status: 'active',
     tags: ['networking', 'bittorrent', 'c', 'tcp'],
     concepts: ['io-models', 'system-calls'],
     date: '2025-04',
@@ -65,7 +80,7 @@ const projects = [
       <p class="section-label">01 — Projects</p>
       <h1>Projects</h1>
       <p style="max-width: 50ch; margin-top: 0.75rem; color: var(--text-muted);">
-        Real implementations. Code that boots, allocates, executes — built to understand 
+        Real implementations. Code that boots, allocates, executes — built to understand
         systems from the inside out.
       </p>
     </div>
