@@ -646,7 +646,7 @@ hr {
   transition: var(--transition);
 }
 
-@media (max-width: 700px) {
+@media (max-width: 800px) {
   .nav__hamburger { display: flex; }
   .nav__links {
     display: none;
